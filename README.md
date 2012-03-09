@@ -1,6 +1,6 @@
-#Naive Baysian Tweet Classifier in Node.js
+#Naive Bayes Tweet Classifier in Node.js
 
-Classify tweets using Node.js and a [naive Bayesian classifier](http://en.wikipedia.org/wiki/Naive_Bayes_classifier).
+Classify tweets using Node.js and a [naive Bayes classifier](http://en.wikipedia.org/wiki/Naive_Bayes_classifier).
 
 Tweets are pulled from the [twitter streaming api](https://dev.twitter.com/docs/streaming-api/methods) and queued to be classified.  After classifying a bunch of tweets into Spam, Interesting, Not English, or Not-interesting it will attempt to predict which of these categories a tweet fits into.
 
