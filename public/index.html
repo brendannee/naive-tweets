@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Node.js Naive Bayesian Classifier for Twitter </title>
+  <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8">
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" media="screen">
+</head>
+<body>
+  <div class="navbar">
+    <div class="navbar-inner">
+      <div class="container">
+        <a class="brand" href="#">Twitter Classify</a>
+        <div class="nav-collapse">
+          <ul class="nav" id="top-menu">
+            <li><a href="/">Classify Tweets</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <h1 id="pageTitle">Classify this tweet</h1>
+
+
+    <div id="tweet" class="well"></div>
+
+    <div class="classification">
+      <button class="btn" id="interesting">Interesting</button>
+      <button class="btn" id="not-interesting">Not Interesting</button>
+      <button class="btn" id="spam">Spam</button>
+      <button class="btn" id="non_english">Non-English</button>
+
+    </div>
+
+    <footer>
+    </footer>
+
+  </div> <!-- /container -->
+
+  <script id="tweetTemplate" type="text/html">
+    <div>
+      <div class="profile_image">
+        <img src="{{user.profile_image_url}}" alt="{{twitter}}">
+      </div>
+      </div class="tweetContent">
+        <div class="name">{{user.name}}</div>
+        <div class="screen_name"><a href="http://twitter.com/{{user.screen_name}}">@{{user.screen_name}}</a></div>
+        <div class="location">{{user.location}}</div>
+        <p class="text">{{{text}}}</p>
+        <p class="timeago created_at" title="{{created_at}}">{{created_at}}</p>
+      </div>
+    </div>
+  </script>
+
+  <script src="js/jquery-1.7.1.min.js"></script>
+  <script src="js/jquery.timeago.js"></script>
+  <script src="js/ICanHaz.min.js"></script>
+  <script src="socket.io/socket.io.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

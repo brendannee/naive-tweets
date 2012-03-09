@@ -1,0 +1,51 @@
+.classification{
+  padding:5px;
+}
+
+.classification button{
+  width:125px;
+}
+
+
+#tweet{
+ margin-top:10px;
+}
+
+#tweet .profile_image{
+  float:left;
+  width:65px;
+  height:100px;
+}
+
+#tweet .name{
+  display: inline-block;
+  font-weight:bold;
+  margin-right:15px;
+}
+
+#tweet .text{
+  margin:7px 0;
+}
+
+#tweet .created_at{
+  color:#999;
+  font-size:10px;
+}
+
+#tweet .location{
+  display:inline-block;
+  margin-left:15px;
+}
+
+
+
+
+#tweet .screen_name{
+  display: inline-block;
+}
+
+footer{
+  margin-top:50px;
+  border-top:1px #CCC solid;
+  text-align:right;
+}
