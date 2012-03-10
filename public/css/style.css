@@ -57,6 +57,10 @@ h1{
   float:left;
 }
 
+.tweet .trained{
+  font-weight:bold;
+}
+
 
 #tweets{
   display:none;

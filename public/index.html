@@ -71,7 +71,7 @@
   </script>
 
     <script id="showTweet" type="text/html">
-    <div class="tweet well">
+      <div class="tweet well">
       <div class="profile_image">
         <img src="{{user.profile_image_url}}" alt="{{twitter}}">
       </div>
@@ -83,6 +83,18 @@
         <p class="timeago created_at" title="{{created_at}}">{{created_at}}</p>
       </div>
       <div class="stats">
+        {{#spam}}
+        <div class="trained">Trained as Spam</div>
+        {{/spam}}
+
+        {{#not_english}}
+        <div class="trained">Trained as Non-English</div>
+        {{/not_english}}
+
+        {{#interesting}}
+        <div class="trained">Trained as Interesting</div>
+        {{/interesting}}
+
         <div>Spam: {{spam_prob}}</div>
         <div>Not English: {{not_english_prob}}</div>
         <div>Interesting: {{interesting_prob}}</div>
