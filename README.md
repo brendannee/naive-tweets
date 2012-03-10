@@ -4,6 +4,23 @@ Classify tweets using Node.js and a [naive Bayes classifier](http://en.wikipedia
 
 Tweets are pulled from the [twitter streaming api](https://dev.twitter.com/docs/streaming-api/methods) and queued to be classified.  After classifying a bunch of tweets into Spam, Interesting, Not English, or Not-interesting it will attempt to predict which of these categories a tweet fits into.
 
+A front-end to train the classifier and review the results is included.
+
+## Configuration
+
+Make a file called options.js that looks like the following:
+
+    module.exports = {
+        consumer_key: <KEY>
+      , consumer_secret: <SECRET>
+      , access_token_key: <SECRET>
+      , access_token_secret: <SECRET>
+      , mongo_node_database: 'tweets'
+      , mongo_node_host: 'localhost'
+    }
+
+You need to get these keys from the [Twitter Developers Page](https://dev.twitter.com/).
+
 ## License
 
 (The MIT License)
