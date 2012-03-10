@@ -54,7 +54,16 @@ module.exports = function routes(app){
 
   });
 
-  app.get('/scores', function(req, res){
+  app.get('/api/getTweets', function(req, res){
+    Tweet.find()
+      .limit(100)
+      .run(function(e, results){
+        res.json(results);
+      });
+    
+  });
+
+  app.get('/process', function(req, res){
     async.series([
         scoreWords
       , calculateProbabilities
@@ -119,6 +128,12 @@ module.exports = function routes(app){
 
     //split spaces
     var words = tweet.split(/\W+/);
+
+    //filter to unique words
+    words = _.uniq(words);
+
+    //remove blanks
+    words = _.without(words, '');
 
     return words;
   }
@@ -241,26 +256,47 @@ module.exports = function routes(app){
     console.log('Classifying Tweets');
 
     //classify each tweet
-    Tweet.find({}, function(e, result){
-      var words = splitWords(result.text)
-        , probabilities = [];
-
-      async.forEach(words, getProbabilities, function(e){
+    Tweet.find({}, function(e, results){
+      async.forEach(results, classifyTweet, function(e){
+        console.log('All Tweets Classified');
         cb();
       });
 
-      function getProbabilities(word, cb){
-        //lookup probabilities for each word
-        Probability.findOne({word: word}, function(e, result){
-          probabilities.push({
-              word: word
-            , not_english: result.not_english
-            , spam: result.spam
-            , interesting: result.interesting
-          });
+      function classifyTweet(tweet, cb){
+        var words = splitWords(tweet.text)
+          , probabilities = [];
 
-          cb();
+        async.forEach(words, getProbabilities, function(e){
+          var notEnglishProb = calculateProb(probabilities, 'not_english')
+            , spamProb = calculateProb(probabilities, 'spam')
+            , interestingProb = calculateProb(probabilities, 'interesting');
+
+          function calculateProb(probabilities, key){
+            var product = _.reduce(probabilities, function(memo, word){ return memo * word[key]; }, 1);
+            var subtract = _.reduce(probabilities, function(memo, word){ return memo * (1 - word[key]) }, 1);
+            return product / ( product + subtract );
+          }
+
+          Tweet.update({_id: tweet._id}, { not_english_prob: notEnglishProb, spam_prob: spamProb, interesting_prob: interestingProb}, function(e){
+            cb();
+          });
         });
+
+        function getProbabilities(word, cb){
+          //lookup probabilities for each word
+          Probability.findOne({word: word}, function(e, result){
+            if(result){
+              probabilities.push({
+                  word: word
+                , not_english: result.not_english
+                , spam: result.spam
+                , interesting: result.interesting
+              });
+            }
+
+            cb();
+          });
+        }
       }
     });
   }
