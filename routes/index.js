@@ -3,8 +3,11 @@ require('../models/Spam');
 require('../models/NotEnglish');
 require('../models/Interesting');
 require('../models/NotInteresting');
+require('../models/Probability');
 
-var async = require('async');
+
+var async = require('async')
+  , _ = require('underscore');
 
 module.exports = function routes(app){
   
@@ -13,7 +16,8 @@ module.exports = function routes(app){
     , Spam = app.set('db').model('Spam')
     , NotEnglish = app.set('db').model('NotEnglish')
     , Interesting = app.set('db').model('Interesting')
-    , NotInteresting = app.set('db').model('NotInteresting');
+    , NotInteresting = app.set('db').model('NotInteresting')
+    , Probability = app.set('db').model('Probability');
 
   io.sockets.on('connection', function (socket) {
     getTweetToClassify();
@@ -52,8 +56,9 @@ module.exports = function routes(app){
 
   app.get('/scores', function(req, res){
     async.series([
-        function(cb) { scoreWords(cb); }
-      , function(cb) { calculateProbabilities(cb); }
+        scoreWords
+      , calculateProbabilities
+      , classifyTweets
     ], function(e, results){
       res.send('Completed');
     });
@@ -68,6 +73,7 @@ module.exports = function routes(app){
       , function(cb){ NotEnglish.collection.drop(cb); }
       , function(cb){ Interesting.collection.drop(cb); }
       , function(cb){ NotInteresting.collection.drop(cb); }
+      , function(cb){ Probability.collection.drop(cb); }
     ], function(e, results){
         Tweet.find({classified: true}, function(e, tweets){
           async.forEach(tweets, parseTweet, function(e){
@@ -79,19 +85,7 @@ module.exports = function routes(app){
 
 
   function parseTweet(tweet, cb){
-    tweetText = tweet.text;
-
-    //remove all username
-    tweetText = tweetText.replace(/@([A-Za-z0-9_]+)/g,"")
-
-    //remove all URLs
-    tweetText = tweetText.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
-
-    //remove all punctuation
-    tweetText = tweetText.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
-
-    //split spaces
-    var words = tweetText.split(/\W+/);
+    var words = splitWords(tweet.text);
 
     if(tweet.spam){
       updateWords(words, Spam, cb);
@@ -102,21 +96,176 @@ module.exports = function routes(app){
     } else {
       updateWords(words, NotInteresting, cb);
     }
+
+    function updateWords(words, Schema, cb){
+      words.forEach(function(word){
+        if(word){
+          word = word.toLowerCase();
+          Schema.update({word: word}, {$inc: {count: 1}}, {upsert: true}, cb);
+        }
+      });
+    }
   }
 
-  function updateWords(words, Schema, cb){
-    words.forEach(function(word){
-      if(word){
-        word = word.toLowerCase();
-        Schema.update({word: word}, {$inc: {count: 1}}, {upsert: true}, cb);
+  function splitWords(tweet){
+    //remove all username
+    tweet = tweet.replace(/@([A-Za-z0-9_]+)/g,"")
+
+    //remove all URLs
+    tweet = tweet.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
+
+    //remove all punctuation
+    tweet = tweet.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
+
+    //split spaces
+    var words = tweet.split(/\W+/);
+
+    return words;
+  }
+
+
+
+  function calculateProbabilities(cb){
+    //get a list of all words and put into probabilities table
+
+    async.parallel([
+        function(cb){
+          Spam.find({},['word'], function(e, words){
+            async.forEach(words, addWord, cb);
+          });
+        }
+      , function(cb){
+          Interesting.find({},['word'], function(e, words){
+            async.forEach(words, addWord, cb);
+          });
+        }
+      , function(cb){
+          NotInteresting.find({},['word'], function(e, words){
+            async.forEach(words, addWord, cb);
+          });
+        }
+      , function(cb){
+          NotEnglish.find({},['word'], function(e, words){
+            async.forEach(words, addWord, cb);
+          });
+        }
+    ], cb);
+
+    function addWord(item, cb){
+      var word = item.word
+        , spamWordCount
+        , spamTweetCount
+        , interestingWordCount
+        , interestingTweetCount
+        , notInterestingWordCount
+        , notInterestingTweetCount
+        , notEnglishWordCount
+        , notEnglishTweetCount;
+
+      //Now get counts for each word
+      async.parallel([
+          function(cb){
+            Spam.findOne({word: word}, function(e, results){
+              spamWordCount = (results) ? results.count : 0;
+              cb();
+            });
+          }
+        , function(cb){
+            Interesting.findOne({word: word}, function(e, results){
+              interestingWordCount = (results) ? results.count : 0;
+              cb();
+            });
+          }
+        , function(cb){
+            NotInteresting.findOne({word: word}, function(e, results){
+              notInterestingWordCount = (results) ? results.count : 0;
+              cb();
+            });
+          }
+        , function(cb){
+            NotEnglish.findOne({word: word}, function(e, results){
+              notEnglishWordCount = (results) ? results.count : 0;
+              cb();
+            });
+          }
+        , function(cb){
+            Tweet.count({spam:true}, function(e, count){
+              spamTweetCount = count;
+              cb();
+            });
+          }
+        , function(cb){
+            Tweet.count({interesting:true}, function(e, count){
+              interestingTweetCount = count;
+              cb();
+            });
+          }
+        , function(cb){
+            Tweet.count({not_english:true}, function(e, count){
+              notEnglishTweetCount = count;
+              cb();
+            });
+          }
+        , function(cb){
+            Tweet.count({not_english:false, interesting:false, spam:false}, function(e, count){
+              notInterestingTweetCount = count;
+              cb();
+            });
+          }
+
+      ], function(e, results){
+        //calculate probabilities
+        var totalCount = spamWordCount + interestingWordCount + notEnglishWordCount + notInterestingWordCount;
+
+        if(totalCount >= 5){
+          //if word occurs at least 5 times, then use it to calculate probability
+          //Minimum probability of 0.01
+          var spamProb = Math.max(0.01, ( spamWordCount / spamTweetCount ) / ( ( spamWordCount / spamTweetCount ) + ( ( interestingWordCount + notEnglishWordCount + notInterestingWordCount ) / ( interestingTweetCount + notEnglishTweetCount + notInterestingTweetCount ) ) ) );
+
+          var interestingProb = Math.max(0.01, ( interestingWordCount / interestingTweetCount ) / ( ( interestingWordCount / interestingTweetCount ) + ( ( spamWordCount + notEnglishWordCount + notInterestingWordCount ) / ( spamTweetCount + notEnglishTweetCount + notInterestingTweetCount ) ) ) );
+
+          var notEnglishProb = Math.max(0.01, ( notEnglishWordCount / notEnglishTweetCount ) / ( ( notEnglishWordCount / notEnglishTweetCount ) + ( ( interestingWordCount + spamWordCount + notInterestingWordCount ) / ( interestingTweetCount + spamTweetCount + notInterestingTweetCount ) ) ) );
+
+          //save probabilities
+          Probability.update({word: word}, {$set:{word: word, spam: spamProb, interesting: interestingProb, not_english: notEnglishProb}}, {upsert:true}, cb);
+        } else {
+          //word not common enough to use
+          cb();
+        }
+      });
+    }
+  }
+
+  
+  function classifyTweets(cb){
+    console.log('Classifying Tweets');
+
+    //classify each tweet
+    Tweet.find({}, function(e, result){
+      var words = splitWords(result.text)
+        , probabilities = [];
+
+      async.forEach(words, getProbabilities, function(e){
+        cb();
+      });
+
+      function getProbabilities(word, cb){
+        //lookup probabilities for each word
+        Probability.findOne({word: word}, function(e, result){
+          probabilities.push({
+              word: word
+            , not_english: result.not_english
+            , spam: result.spam
+            , interesting: result.interesting
+          });
+
+          cb();
+        });
       }
     });
   }
 
-  function calculateProbabilities(cb){
-    console.log('calc');
-    cb();
-  }
+
 
   //Nothing specified
   app.all('*', function notFound(req, res) {
