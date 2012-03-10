@@ -14,7 +14,7 @@ $(document).ready(function(){
   var socket = io.connect('http://localhost');
   socket.on('toClassify', renderTweet);
 
-  $('.classification button').click(function(){
+  $('#classification button').click(function(){
     $(this)
       .addClass('btn-success')
       .siblings().addClass('disabled');
@@ -22,14 +22,44 @@ $(document).ready(function(){
       socket.emit('requestTweet', { tweet_id: tweet_id, choice: this.id });
   });
 
+  $('#top-menu li a').click(function(){
+    $(this).parent().addClass('active')
+      .siblings().removeClass('active');
+    return false;
+  });
+
+  $('#top-menu .show a').click(function(){
+    $('#tweets .content').empty()
+    $('#tweets').show();
+    $('#classify').hide();
+
+    $('#pageTitle');
+
+    $.getJSON('/api/getTweets', function(data){
+      data.forEach(function(tweet){
+        tweet.spam_prob = Math.round(tweet.spam_prob*1000)/1000;
+        tweet.not_english_prob = Math.round(tweet.not_english_prob*1000)/1000;
+        tweet.interesting_prob = Math.round(tweet.interesting_prob*1000)/1000;
+
+        var div = ich.showTweet(tweet);
+        $('#tweets .content').append(div);
+      });
+    });
+  });
+
+  $('#top-menu .classify a').click(function(){
+    $('#tweets').hide();
+    $('#classify').show();
+
+  });
 
 });
 
 function renderTweet(tweet){
-  $('.classification button').removeClass('btn-success disabled');
+  $('#classification button').removeClass('btn-success disabled');
   tweet_id = tweet.id_str;
   tweet.text = parseTweetURL(tweet.text);
-  var div = ich.tweetTemplate(tweet);
+  var div = ich.classifyTweet(tweet);
   $('#tweet').html(div);
   $('.timeago').timeago();
 }

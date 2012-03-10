@@ -13,7 +13,8 @@
         <a class="brand" href="#">Twitter Classify</a>
         <div class="nav-collapse">
           <ul class="nav" id="top-menu">
-            <li><a href="/">Classify Tweets</a></li>
+            <li class="classify active"><a href="/">Classify Tweets</a></li>
+            <li class="show"><a href="/">Show Tweets</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -22,17 +23,27 @@
 
   <div class="container">
 
-    <h1 id="pageTitle">Classify this tweet</h1>
+    <div id="classify">
+
+      <h1 id="pageTitle">Classify this tweet</h1>
 
 
-    <div id="tweet" class="well"></div>
+      <div id="tweet" class="well"></div>
 
-    <div class="classification">
-      <button class="btn" id="interesting">Interesting</button>
-      <button class="btn" id="not_interesting">Not Interesting</button>
-      <button class="btn" id="spam">Spam</button>
-      <button class="btn" id="not_english">Non-English</button>
+      <div id="classification">
+        <button class="btn" id="interesting">Interesting</button>
+        <button class="btn" id="not_interesting">Not Interesting</button>
+        <button class="btn" id="spam">Spam</button>
+        <button class="btn" id="not_english">Non-English</button>
 
+      </div>
+
+    </div>
+
+    <div id="tweets">
+      <h1 id="pageTitle">Classified Tweets</h1>
+
+      <div class="content"></div>
     </div>
 
     <footer>
@@ -40,12 +51,12 @@
 
   </div> <!-- /container -->
 
-  <script id="tweetTemplate" type="text/html">
-    <div>
+  <script id="classifyTweet" type="text/html">
+    <div class="tweet">
       <div class="profile_image">
         <img src="{{user.profile_image_url}}" alt="{{twitter}}">
       </div>
-      </div class="tweetContent">
+      <div class="tweetContent">
         <div class="name">{{user.name}}</div>
         <div class="screen_name"><a href="http://twitter.com/{{user.screen_name}}">@{{user.screen_name}}</a></div>
         <div class="location">{{user.location}}</div>
@@ -54,6 +65,27 @@
       </div>
     </div>
   </script>
+
+    <script id="showTweet" type="text/html">
+    <div class="tweet well">
+      <div class="profile_image">
+        <img src="{{user.profile_image_url}}" alt="{{twitter}}">
+      </div>
+      <div class="tweetContent">
+        <div class="name">{{user.name}}</div>
+        <div class="screen_name"><a href="http://twitter.com/{{user.screen_name}}">@{{user.screen_name}}</a></div>
+        <div class="location">{{user.location}}</div>
+        <p class="text">{{{text}}}</p>
+        <p class="timeago created_at" title="{{created_at}}">{{created_at}}</p>
+      </div>
+      <div class="stats">
+        <div>Spam: {{spam_prob}}</div>
+        <div>Not English: {{not_english_prob}}</div>
+        <div>Interesting: {{interesting_prob}}</div>
+      </div>
+    </div>
+  </script>
+
 
   <script src="js/jquery-1.7.1.min.js"></script>
   <script src="js/jquery.timeago.js"></script>

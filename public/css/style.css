@@ -1,8 +1,8 @@
-.classification{
+#classification{
   padding:5px;
 }
 
-.classification button{
+#classification button{
   width:125px;
 }
 
@@ -11,37 +11,54 @@
  margin-top:10px;
 }
 
-#tweet .profile_image{
+.tweet{
+  overflow:hidden;
+}
+
+.tweet .profile_image{
   float:left;
   width:65px;
   height:100px;
 }
 
-#tweet .name{
+.tweet .tweetContent{
+  width: 650px;
+  float: left;
+}
+
+.tweet .name{
   display: inline-block;
   font-weight:bold;
   margin-right:15px;
 }
 
-#tweet .text{
+.tweet .text{
   margin:7px 0;
 }
 
-#tweet .created_at{
+.tweet .created_at{
   color:#999;
   font-size:10px;
 }
 
-#tweet .location{
+.tweet .location{
   display:inline-block;
   margin-left:15px;
 }
 
-
-
-
-#tweet .screen_name{
+.tweet .screen_name{
   display: inline-block;
+}
+
+.tweet .stats{
+  font-size:14px
+  width:100px;
+  float:left;
+}
+
+
+#tweets{
+  display:none;
 }
 
 footer{
