@@ -60,8 +60,36 @@ module.exports = function routes(app){
       .run(function(e, results){
         res.json(results);
       });
-    
   });
+
+  app.get('/api/getInteresting', function(req, res){
+    Tweet.find()
+      .limit(100)
+      .sort('interesting_prob', -1)
+       .run(function(e, results){
+        res.json(results);
+       });
+  });
+
+  app.get('/api/getSpam', function(req, res){
+    Tweet.find()
+      .limit(100)
+      .sort('spam_prob', -1)
+       .run(function(e, results){
+        res.json(results);
+       });
+  });
+
+  app.get('/api/getNotEnglish', function(req, res){
+    Tweet.find()
+      .limit(100)
+      .sort('not_english_prob', -1)
+       .run(function(e, results){
+        res.json(results);
+       });
+  });
+
+
 
   app.get('/process', function(req, res){
     async.series([
