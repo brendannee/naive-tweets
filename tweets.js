@@ -20,14 +20,15 @@ module.exports = function(app){
     console.log('Getting Tweet stream for 60 seconds');
     var tweetCount = 0;
     stream.on('data', function (data) {
-      var tweet = new Tweet(data);
-      tweet.save();
+      if(data.text.charAt(0) != '@'){
+        var tweet = new Tweet(data);
+        tweet.save();
       
-      tweetCount++;
-      if(tweetCount % 50 === 0){
-        console.log(tweetCount + ' tweets collected');
+        tweetCount++;
+        if(tweetCount % 50 === 0){
+          console.log(tweetCount + ' tweets collected');
+        }
       }
-
     });
 
     //disconnect after 1 minute of tweets

@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
 var Tweet = mongoose.model('Tweet', new mongoose.Schema({
-    id_str              :  { type: String, unique: true }
+      id_str            :  { type: String, unique: true }
     , text              :  { type: String }
     , created_at        :  { type: String }
     , spam              :  { type: Boolean }
