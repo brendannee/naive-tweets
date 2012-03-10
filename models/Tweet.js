@@ -6,6 +6,6 @@ var Tweet = mongoose.model('Tweet', new mongoose.Schema({
     , created_at        :  { type: String }
     , spam              :  { type: Boolean }
     , interesting       :  { type: Boolean }
-    , non_english       :  { type: Boolean }
+    , not_english       :  { type: Boolean }
     , classified        :  { type: Boolean, default: false }
   }));

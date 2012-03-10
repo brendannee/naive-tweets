@@ -23,7 +23,7 @@ module.exports = function routes(app){
       Tweet.findOne({id_str: data.tweet_id}, function(e, tweet){
         tweet.spam = (data.choice == 'spam') ? true : false;
         tweet.interesting = (data.choice == 'interesting') ? true : false;
-        tweet.non_english = (data.choice == 'non_english') ? true : false;
+        tweet.not_english = (data.choice == 'not_english') ? true : false;
         tweet.classified = true;
         tweet.save(function(e){
           //send another tweet to classify
@@ -51,7 +51,10 @@ module.exports = function routes(app){
   });
 
   app.get('/scores', function(req, res){
-    scoreWords(function(){
+    async.series([
+        function(cb) { scoreWords(cb); }
+      , function(cb) { calculateProbabilities(cb); }
+    ], function(e, results){
       res.send('Completed');
     });
   });
@@ -108,6 +111,11 @@ module.exports = function routes(app){
         Schema.update({word: word}, {$inc: {count: 1}}, {upsert: true}, cb);
       }
     });
+  }
+
+  function calculateProbabilities(cb){
+    console.log('calc');
+    cb();
   }
 
   //Nothing specified
