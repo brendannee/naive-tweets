@@ -1,48 +1,25 @@
 require('../models/Tweet');
-require('../models/Spam');
-require('../models/NotEnglish');
-require('../models/Interesting');
-require('../models/NotInteresting');
 require('../models/Probability');
 
 
 var async = require('async')
   , _ = require('underscore')
-  twitter = require('ntwitter');
+  twitter = require('ntwitter')
+  languages = ['en', 'es', 'pt', 'fr', 'other'];
 
 module.exports = function routes(app){
 
-  /* Socket IO */
-  
   var io = require('socket.io').listen(app)
     , Tweet = app.set('db').model('Tweet')
-    , Spam = app.set('db').model('Spam')
-    , NotEnglish = app.set('db').model('NotEnglish')
-    , Interesting = app.set('db').model('Interesting')
-    , NotInteresting = app.set('db').model('NotInteresting')
     , Probability = app.set('db').model('Probability')
     , options = app.set('options')
     , twit = app.set('twit');
 
+  /* Socket IO */
+
   io.sockets.on('connection', function (socket) {
-    getTweetToClassify();
-
-    socket.on('requestTweet', function (data) {
-      //save response
-      Tweet.findOne({id_str: data.tweet_id}, function(e, tweet){
-        tweet.spam = (data.choice == 'spam') ? true : false;
-        tweet.interesting = (data.choice == 'interesting') ? true : false;
-        tweet.not_english = (data.choice == 'not_english') ? true : false;
-        tweet.classified = true;
-        tweet.save(function(e){
-          //send another tweet to classify
-          getTweetToClassify();
-        });
-      });
-    });
-
     function getTweetToClassify(){
-      Tweet.findOne({classified: false}, function(e, tweet){
+      Tweet.findOne({trained: false}, function(e, tweet){
 
         var expr = /[^\u0000-\ud83d]/g;
 
@@ -56,6 +33,21 @@ module.exports = function routes(app){
         }
       });
     }
+
+    socket.on('requestTweet', function (data) {
+      if(data){
+        Tweet.findOne({ id_str: data.tweet_id }, function(e, tweet){
+          tweet.trained_language = data.language
+          tweet.trained = true;
+          tweet.save(function(e){
+            //send another tweet to classify
+            getTweetToClassify();
+          });
+        });
+      } else {
+        getTweetToClassify();
+      }
+    });
   });
 
 
@@ -69,28 +61,10 @@ module.exports = function routes(app){
       });
   });
 
-  app.get('/api/getInteresting', function(req, res){
-    Tweet.find()
+  app.get('/api/getLanguage/:language', function(req, res){
+    Tweet.find({})
       .limit(100)
-      .sort('interesting_prob', -1)
-       .run(function(e, results){
-        res.json(results);
-       });
-  });
-
-  app.get('/api/getSpam', function(req, res){
-    Tweet.find()
-      .limit(100)
-      .sort('spam_prob', -1)
-       .run(function(e, results){
-        res.json(results);
-       });
-  });
-
-  app.get('/api/getNotEnglish', function(req, res){
-    Tweet.find()
-      .limit(100)
-      .sort('not_english_prob', -1)
+      .sort('probability.' + req.params.language, -1)
        .run(function(e, results){
         res.json(results);
        });
@@ -102,16 +76,22 @@ module.exports = function routes(app){
     twit.stream('statuses/sample', function(stream) {
       console.log('Getting Tweet stream for 60 seconds');
       var tweetCount = 0;
-      stream.on('data', function (data) {
-        if(data.text.charAt(0) != '@'){
-          var tweet = new Tweet(data);
-          tweet.save();
-          tweetCount++;
-          if(tweetCount % 50 === 0){
-            console.log(tweetCount + ' tweets collected');
+      stream
+        .on('data', function(data){
+          if(data.text.charAt(0) != '@'){
+            var tweet = new Tweet(data);
+            tweet.save();
+            tweetCount++;
+            if(tweetCount % 50 === 0){
+              console.log(tweetCount + ' tweets collected');
+            }
           }
-        }
-      });
+        })
+        .on('destroy', function(data){
+          try{
+            res.json({status: tweetCount + ' tweets collected'});
+          } catch(e) {}
+        });
 
       //disconnect after 1 minute of tweets
       setTimeout(stream.destroy, 60000);
@@ -119,66 +99,50 @@ module.exports = function routes(app){
   });
 
 
-  app.get('/process', function(req, res){
+  app.get('/api/process', function(req, res){
+    console.log('Scoring words');
     async.series([
-        scoreWords
-      , calculateProbabilities
+        clearProbabilities
+      , countWords
+      , calculateWordProbabilities
       , classifyTweets
     ], function(e, results){
-      res.send('Completed');
+      console.log('All Tweets Classified');
+      res.json({status: 'Completed'});
     });
   });
 
-
-  function scoreWords(cb){
-    console.log('scoring words');
-    async.parallel([
-        //remove existing counts
-        function(cb){ Spam.collection.drop(cb); }
-      , function(cb){ NotEnglish.collection.drop(cb); }
-      , function(cb){ Interesting.collection.drop(cb); }
-      , function(cb){ NotInteresting.collection.drop(cb); }
-      , function(cb){ Probability.collection.drop(cb); }
-    ], function(e, results){
-        Tweet.find({classified: true}, function(e, tweets){
-          async.forEach(tweets, parseTweet, function(e){
-            cb();
-          });
-        });
-    });
+  function clearProbabilities(cb){
+     Probability.collection.drop(cb);
   }
 
+  function countWords(cb){
+    //Find all trained tweets, break them into words and count them
 
-  function parseTweet(tweet, cb){
-    var words = splitWords(tweet.text);
+    Tweet.find({trained: true}, function(e, tweets){
+      async.forEach(tweets, parseTweet, cb);
+    });
 
-    if(tweet.spam){
-      updateWords(words, Spam, cb);
-    } else if(tweet.not_english){
-      updateWords(words, NotEnglish, cb);
-    } else if(tweet.interesting){
-      updateWords(words, Interesting, cb);
-    } else {
-      updateWords(words, NotInteresting, cb);
-    }
-
-    function updateWords(words, Schema, cb){
-      words.forEach(function(word){
+    function parseTweet(tweet, cb){
+      async.forEach(splitWords(tweet.text), function(word, cb){
         if(word){
-          word = word.toLowerCase();
-          Schema.update({word: word}, {$inc: {count: 1}}, {upsert: true}, cb);
+          var updateField = "count." + tweet.trained_language
+            , update = {$inc: {}};
+          update.$inc[updateField] = 1;
+          Probability.update({word: word}, update, {upsert: true}, cb);
         }
-      });
+      }, cb);
     }
   }
 
   function splitWords(tweet){
+    //Split tweet into words
+
     //remove all username
     tweet = tweet.replace(/@([A-Za-z0-9_]+)/g,"");
 
     //remove all hashtags
     tweet = tweet.replace(/#([A-Za-z0-9_]+)/g,"");
-
 
     //remove all URLs
     tweet = tweet.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
@@ -186,8 +150,11 @@ module.exports = function routes(app){
     //remove all punctuation
     tweet = tweet.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
 
+    //make all lowercase
+    tweet = tweet.toLowerCase();
+
     //split spaces
-    var words = tweet.split(/\W+/);
+    var words = tweet.split(/\s+/);
 
     //filter to unique words
     words = _.uniq(words);
@@ -199,110 +166,42 @@ module.exports = function routes(app){
   }
 
 
+  function calculateWordProbabilities(cb){
+    //Get a list of all words and put into probabilities table
 
-  function calculateProbabilities(cb){
-    //get a list of all words and put into probabilities table
+    Probability.find({}, function(e, words){
+      async.forEach(words, calculateWord, cb);
+    });
+    
+    function calculateWord(word, cb){
+      var wordCount = {}
+        , tweetCount = {}
+        , totalWordCount
+        , totalTweetCount
+        , probability = {};
 
-    async.parallel([
-        function(cb){
-          Spam.find({},['word'], function(e, words){
-            async.forEach(words, addWord, cb);
-          });
-        }
-      , function(cb){
-          Interesting.find({},['word'], function(e, words){
-            async.forEach(words, addWord, cb);
-          });
-        }
-      , function(cb){
-          NotInteresting.find({},['word'], function(e, words){
-            async.forEach(words, addWord, cb);
-          });
-        }
-      , function(cb){
-          NotEnglish.find({},['word'], function(e, words){
-            async.forEach(words, addWord, cb);
-          });
-        }
-    ], cb);
-
-    function addWord(item, cb){
-      var word = item.word
-        , spamWordCount
-        , spamTweetCount
-        , interestingWordCount
-        , interestingTweetCount
-        , notInterestingWordCount
-        , notInterestingTweetCount
-        , notEnglishWordCount
-        , notEnglishTweetCount;
-
-      //Now get counts for each word
-      async.parallel([
-          function(cb){
-            Spam.findOne({word: word}, function(e, results){
-              spamWordCount = (results) ? results.count : 0;
-              cb();
-            });
-          }
-        , function(cb){
-            Interesting.findOne({word: word}, function(e, results){
-              interestingWordCount = (results) ? results.count : 0;
-              cb();
-            });
-          }
-        , function(cb){
-            NotInteresting.findOne({word: word}, function(e, results){
-              notInterestingWordCount = (results) ? results.count : 0;
-              cb();
-            });
-          }
-        , function(cb){
-            NotEnglish.findOne({word: word}, function(e, results){
-              notEnglishWordCount = (results) ? results.count : 0;
-              cb();
-            });
-          }
-        , function(cb){
-            Tweet.count({spam:true}, function(e, count){
-              spamTweetCount = count;
-              cb();
-            });
-          }
-        , function(cb){
-            Tweet.count({interesting:true}, function(e, count){
-              interestingTweetCount = count;
-              cb();
-            });
-          }
-        , function(cb){
-            Tweet.count({not_english:true}, function(e, count){
-              notEnglishTweetCount = count;
-              cb();
-            });
-          }
-        , function(cb){
-            Tweet.count({not_english:false, interesting:false, spam:false}, function(e, count){
-              notInterestingTweetCount = count;
-              cb();
-            });
-          }
-
-      ], function(e, results){
+      //Get counts for each tweet and word
+      async.forEach(languages, function(language, cb){
+        wordCount[language] = word.count[language] || 0;
+        Tweet.count({ trained_language: language }, function(e, count){
+          tweetCount[language] = count;
+          cb();
+        });
+      }, function(e, results){
         //calculate probabilities
-        var totalCount = spamWordCount + interestingWordCount + notEnglishWordCount + notInterestingWordCount;
+        totalWordCount = _.reduce(wordCount, function(memo, num){ return memo + num; }, 0);
+        totalTweetCount = _.reduce(tweetCount, function(memo, num){ return memo + num; }, 0);
 
-        if(totalCount >= 5){
+        if(totalWordCount >= 5){
           //if word occurs at least 5 times, then use it to calculate probability
           //Minimum probability of 0.01
-          var spamProb = Math.max(0.01, ( spamWordCount / spamTweetCount ) / ( ( spamWordCount / spamTweetCount ) + ( ( interestingWordCount + notEnglishWordCount + notInterestingWordCount ) / ( interestingTweetCount + notEnglishTweetCount + notInterestingTweetCount ) ) ) );
 
-          var interestingProb = Math.max(0.01, ( interestingWordCount / interestingTweetCount ) / ( ( interestingWordCount / interestingTweetCount ) + ( ( spamWordCount + notEnglishWordCount + notInterestingWordCount ) / ( spamTweetCount + notEnglishTweetCount + notInterestingTweetCount ) ) ) );
-
-          var notEnglishProb = Math.max(0.01, ( notEnglishWordCount / notEnglishTweetCount ) / ( ( notEnglishWordCount / notEnglishTweetCount ) + ( ( interestingWordCount + spamWordCount + notInterestingWordCount ) / ( interestingTweetCount + spamTweetCount + notInterestingTweetCount ) ) ) );
+          languages.forEach(function(language){
+            word.probability[language] = Math.max(0.01, ( wordCount[language] / tweetCount[language] ) / ( ( wordCount[language] / tweetCount[language] ) + ( ( totalWordCount - wordCount[language] ) / ( totalTweetCount - tweetCount[language] ) ) ) ) || 0.01;
+          });
 
           //save probabilities
-          Probability.update({word: word}, {$set:{word: word, spam: spamProb, interesting: interestingProb, not_english: notEnglishProb}}, {upsert:true}, cb);
+          word.save(cb);
         } else {
           //word not common enough to use
           cb();
@@ -311,21 +210,36 @@ module.exports = function routes(app){
     }
   }
 
-  
   function classifyTweets(cb){
-    console.log('Classifying Tweets');
-
     //classify each tweet
     Tweet.find({}, function(e, results){
-      async.forEach(results, classifyTweet, function(e){
-        console.log('All Tweets Classified');
-        cb();
-      });
+      async.forEach(results, classifyTweet, cb);
 
       function classifyTweet(tweet, cb){
         var words = splitWords(tweet.text)
-          , probabilities = [];
+          , probability = {}
+          , query = [];
 
+        //build 'or' query
+        words.forEach(function(word){
+          query.push({ word: word });
+        });
+
+        Probability
+          .find()
+          .or(query)
+          .run(function(e, results){
+            var update = {};
+            languages.forEach(function(language){
+              var product = _.reduce(results, function(memo, word){ return memo * word.probability[language] || memo; }, 1);
+              var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language]) || memo; }, 1);
+              //minimum probability of 0.01
+              probability[language] = product / ( product + subtract ) || 0.01;
+            });
+
+            Tweet.update({ _id: tweet._id }, { $set: {probability: probability } }, cb);
+          });
+        /*
         async.forEach(words, getProbabilities, function(e){
           var notEnglishProb = calculateProb(probabilities, 'not_english')
             , spamProb = calculateProb(probabilities, 'spam')
@@ -337,26 +251,29 @@ module.exports = function routes(app){
             return product / ( product + subtract );
           }
 
-          Tweet.update({_id: tweet._id}, { not_english_prob: notEnglishProb, spam_prob: spamProb, interesting_prob: interestingProb}, function(e){
-            cb();
-          });
         });
 
         function getProbabilities(word, cb){
           //lookup probabilities for each word
+          var query = {}
+
           Probability.findOne({word: word}, function(e, result){
             if(result){
-              probabilities.push({
-                  word: word
-                , not_english: result.not_english
-                , spam: result.spam
-                , interesting: result.interesting
+              var wordProb = {word: word};
+              languages.forEach(function(language){
+                probabilities.push({
+                    word: word
+                  , not_english: result.not_english
+                  , spam: result.spam
+                  , interesting: result.interesting
+                });
               });
             }
 
             cb();
           });
         }
+        */
       }
     });
   }

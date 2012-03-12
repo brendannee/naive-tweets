@@ -13,11 +13,13 @@
         <a class="brand" href="#">Twitter Classify</a>
         <div class="nav-collapse">
           <ul class="nav" id="top-menu">
-            <li class="classify active"><a href="/">Classify Tweets</a></li>
-            <li class="show"><a href="/">All Tweets</a></li>
-            <li class="interesting"><a href="/">Interesting</a></li>
-            <li class="spam"><a href="/">Spam</a></li>
-            <li class="not_english"><a href="/">Not English</a></li>
+            <li class="classify active" data-menu="classify"><a href="/">Classify Tweets</a></li>
+            <li data-menu="all"><a href="#">All Tweets</a></li>
+            <li data-menu="en"><a href="#">English</a></li>
+            <li data-menu="es"><a href="#">Spanish</a></li>
+            <li data-menu="pt"><a href="#">Portugese</a></li>
+            <li data-menu="fr"><a href="#">French</a></li>
+            <li data-menu="other"><a href="#">Other Languages</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -34,11 +36,11 @@
       <div id="tweet" class="well"></div>
 
       <div id="classification">
-        <button class="btn" id="interesting">Interesting</button>
-        <button class="btn" id="not_interesting">Not Interesting</button>
-        <button class="btn" id="spam">Spam</button>
-        <button class="btn" id="not_english">Non-English</button>
-
+        <button class="btn" id="en">English</button>
+        <button class="btn" id="es">Spanish</button>
+        <button class="btn" id="pt">Portugese</button>
+        <button class="btn" id="fr">French</button>
+        <button class="btn" id="other">Other</button>
       </div>
 
     </div>
@@ -83,21 +85,11 @@
         <p class="timeago created_at" title="{{created_at}}">{{created_at}}</p>
       </div>
       <div class="stats">
-        {{#spam}}
-        <div class="trained">Trained as Spam</div>
-        {{/spam}}
-
-        {{#not_english}}
-        <div class="trained">Trained as Non-English</div>
-        {{/not_english}}
-
-        {{#interesting}}
-        <div class="trained">Trained as Interesting</div>
-        {{/interesting}}
-
-        <div>Spam: {{spam_prob}}</div>
-        <div>Not English: {{not_english_prob}}</div>
-        <div>Interesting: {{interesting_prob}}</div>
+        <div>English: {{probability.en}}</div>
+        <div>Spanish: {{probability.es}}</div>
+        <div>Portugese: {{probability.pt}}</div>
+        <div>French: {{probability.fr}}</div>
+        <div>Other Language: {{probability.other}}</div>
       </div>
     </div>
   </script>

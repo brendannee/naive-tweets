@@ -12,121 +12,67 @@ var tweet_id;
 
 $(document).ready(function(){
   var socket = io.connect('http://localhost');
-  socket.on('toClassify', renderTweet);
+  socket.emit('requestTweet');
+  socket.on('toClassify', renderSingleTweet);
 
   $('#classification button').click(function(){
     $(this)
       .addClass('btn-success')
       .siblings().addClass('disabled');
-
-      socket.emit('requestTweet', { tweet_id: tweet_id, choice: this.id });
+    socket.emit('requestTweet', { tweet_id: tweet_id, language: this.id });
   });
 
   $('#top-menu li a').click(function(){
+    var menuItem = $(this).parent().attr('data-menu');
+
     $(this).parent().addClass('active')
       .siblings().removeClass('active');
+
+    if(menuItem == 'classify') {
+      $('#tweets').hide();
+      $('#classify').show();
+    } else if(menuItem == 'all'){
+      $('#tweets .content').empty()
+      $('#tweets').show();
+      $('#classify').hide();
+      $('#tweets h1').html('All Tweets');
+
+      $.getJSON('/api/getTweets', renderTweets);
+    } else {
+      $('#tweets .content').empty()
+      $('#tweets').show();
+      $('#classify').hide();
+      $('#tweets h1').html(menuItem + ' Tweets');
+
+      $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
+    }
     return false;
   });
 
-  $('#top-menu .show a').click(function(){
-    $('#tweets .content').empty()
-    $('#tweets').show();
-    $('#classify').hide();
+  function renderTweets(tweets){
+    tweets.forEach(function(tweet){
+      tweet.text = parseTweetURL(tweet.text);
+      for(var language in tweet.probability){
+        tweet.probability[language] = Math.round(language*1000)/1000;
+      }
 
-    $('#tweets h1').html('All Tweets');
-
-    $.getJSON('/api/getTweets', function(data){
-      data.forEach(function(tweet){
-        tweet.text = parseTweetURL(tweet.text);
-        tweet.spam_prob = Math.round(tweet.spam_prob*1000)/1000;
-        tweet.not_english_prob = Math.round(tweet.not_english_prob*1000)/1000;
-        tweet.interesting_prob = Math.round(tweet.interesting_prob*1000)/1000;
-
-        var div = ich.showTweet(tweet);
-        $('#tweets .content').append(div);
-      });
+      var div = ich.showTweet(tweet);
+      $('#tweets .content').append(div);
     });
-  });
+  }
 
-  $('#top-menu .interesting a').click(function(){
-    $('#tweets .content').empty()
-    $('#tweets').show();
-    $('#classify').hide();
+  function renderSingleTweet(tweet){
+    $('#classification button').removeClass('btn-success disabled');
+    tweet_id = tweet.id_str;
+    tweet.text = parseTweetURL(tweet.text);
+    var div = ich.classifyTweet(tweet);
+    $('#tweet').html(div);
+    $('.timeago').timeago();
+  }
 
-    $('#tweets h1').html('Interesting Tweets');
-
-    $.getJSON('/api/getInteresting', function(data){
-      data.forEach(function(tweet){
-        tweet.text = parseTweetURL(tweet.text);
-        tweet.spam_prob = Math.round(tweet.spam_prob*1000)/1000;
-        tweet.not_english_prob = Math.round(tweet.not_english_prob*1000)/1000;
-        tweet.interesting_prob = Math.round(tweet.interesting_prob*1000)/1000;
-
-        var div = ich.showTweet(tweet);
-        $('#tweets .content').append(div);
-      });
-    });
-  });
-
-  $('#top-menu .spam a').click(function(){
-    $('#tweets .content').empty()
-    $('#tweets').show();
-    $('#classify').hide();
-
-    $('#tweets h1').html('Spam Tweets');
-
-    $.getJSON('/api/getSpam', function(data){
-      data.forEach(function(tweet){
-        tweet.text = parseTweetURL(tweet.text);
-        tweet.spam_prob = Math.round(tweet.spam_prob*1000)/1000;
-        tweet.not_english_prob = Math.round(tweet.not_english_prob*1000)/1000;
-        tweet.interesting_prob = Math.round(tweet.interesting_prob*1000)/1000;
-
-        var div = ich.showTweet(tweet);
-        $('#tweets .content').append(div);
-      });
-    });
-  });
-
-
-  $('#top-menu .not_english a').click(function(){
-    $('#tweets .content').empty()
-    $('#tweets').show();
-    $('#classify').hide();
-
-    $('#tweets h1').html('Non-English Tweets');
-
-    $.getJSON('/api/getNotEnglish', function(data){
-      data.forEach(function(tweet){
-        tweet.text = parseTweetURL(tweet.text);
-        tweet.spam_prob = Math.round(tweet.spam_prob*1000)/1000;
-        tweet.not_english_prob = Math.round(tweet.not_english_prob*1000)/1000;
-        tweet.interesting_prob = Math.round(tweet.interesting_prob*1000)/1000;
-
-        var div = ich.showTweet(tweet);
-        $('#tweets .content').append(div);
-      });
-    });
-  });
-
-
-
-  $('#top-menu .classify a').click(function(){
-    $('#tweets').hide();
-    $('#classify').show();
-
-  });
 
 });
 
-function renderTweet(tweet){
-  $('#classification button').removeClass('btn-success disabled');
-  tweet_id = tweet.id_str;
-  tweet.text = parseTweetURL(tweet.text);
-  var div = ich.classifyTweet(tweet);
-  $('#tweet').html(div);
-  $('.timeago').timeago();
-}
 
 function parseTweetURL(text){
   // from http://www.simonwhatley.co.uk/parsing-twitter-usernames-hashtags-and-urls-with-javascript
