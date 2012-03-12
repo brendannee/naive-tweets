@@ -7,9 +7,12 @@ require('../models/Probability');
 
 
 var async = require('async')
-  , _ = require('underscore');
+  , _ = require('underscore')
+  twitter = require('ntwitter');
 
 module.exports = function routes(app){
+
+  /* Socket IO */
   
   var io = require('socket.io').listen(app)
     , Tweet = app.set('db').model('Tweet')
@@ -17,7 +20,9 @@ module.exports = function routes(app){
     , NotEnglish = app.set('db').model('NotEnglish')
     , Interesting = app.set('db').model('Interesting')
     , NotInteresting = app.set('db').model('NotInteresting')
-    , Probability = app.set('db').model('Probability');
+    , Probability = app.set('db').model('Probability')
+    , options = app.set('options')
+    , twit = app.set('twit');
 
   io.sockets.on('connection', function (socket) {
     getTweetToClassify();
@@ -51,8 +56,10 @@ module.exports = function routes(app){
         }
       });
     }
-
   });
+
+
+  /* Routes */
 
   app.get('/api/getTweets', function(req, res){
     Tweet.find()
@@ -89,6 +96,27 @@ module.exports = function routes(app){
        });
   });
 
+
+  app.get('/api/streamTweets', function(req, res){
+
+    twit.stream('statuses/sample', function(stream) {
+      console.log('Getting Tweet stream for 60 seconds');
+      var tweetCount = 0;
+      stream.on('data', function (data) {
+        if(data.text.charAt(0) != '@'){
+          var tweet = new Tweet(data);
+          tweet.save();
+          tweetCount++;
+          if(tweetCount % 50 === 0){
+            console.log(tweetCount + ' tweets collected');
+          }
+        }
+      });
+
+      //disconnect after 1 minute of tweets
+      setTimeout(stream.destroy, 60000);
+    });
+  });
 
 
   app.get('/process', function(req, res){
@@ -146,7 +174,11 @@ module.exports = function routes(app){
 
   function splitWords(tweet){
     //remove all username
-    tweet = tweet.replace(/@([A-Za-z0-9_]+)/g,"")
+    tweet = tweet.replace(/@([A-Za-z0-9_]+)/g,"");
+
+    //remove all hashtags
+    tweet = tweet.replace(/#([A-Za-z0-9_]+)/g,"");
+
 
     //remove all URLs
     tweet = tweet.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");

@@ -10,7 +10,8 @@ var express = require('express')
   , host = process.env['MONGO_NODE_HOST'] || options.mongo_node_host
   , port = process.env['MONGO_NODE_PORT'] || options.mongo_node_port
   , db = (port) ? mongoose.connect(host, dbName, port) : mongoose.connect(host, dbName);
-  
+
+
 module.exports = function(app){
   app.configure(function(){
     this.use(express.cookieParser())
@@ -21,6 +22,12 @@ module.exports = function(app){
         .use(express.static(__dirname + '/public'))
         .set('db', db)
         .set('options', options)
+        .set('twit', new twitter({
+          consumer_key: options.consumer_key,
+          consumer_secret: options.consumer_secret,
+          access_token_key: options.access_token_key,
+          access_token_secret: options.access_token_secret
+        }));
   });
 
   // Dev
