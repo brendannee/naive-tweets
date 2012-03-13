@@ -14,6 +14,7 @@ $(document).ready(function(){
     , socket = io.connect('http://localhost');
   socket.emit('requestTweet');
   socket.on('toClassify', renderSingleTweet);
+  socket.on('newTweet', function(tweet){console.log(tweet);});
 
   $('#classification button').click(function(){
     $(this)

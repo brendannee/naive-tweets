@@ -14,9 +14,12 @@ module.exports = function routes(app){
     , options = app.set('options')
     , twit = app.set('twit');
 
+
   /* Socket IO */
 
   io.sockets.on('connection', function (socket) {
+
+
     function getTweetToClassify(){
       Tweet.findOne({trained: false}, function(e, tweet){
 
@@ -47,6 +50,7 @@ module.exports = function routes(app){
         getTweetToClassify();
       }
     });
+
   });
 
 
