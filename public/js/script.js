@@ -11,10 +11,13 @@ window.log = function f(){ log.history = log.history || []; log.history.push(arg
 $(document).ready(function(){
   var tweet_id
     , languages = {en: "English", es: "Spanish", pt: "Portugese", fr: "French", other: "Other"}
-    , socket = io.connect('http://localhost');
+    , socket = io.connect('http://localhost')
+    , pause = false;
+
   socket.emit('requestTweet');
   socket.on('toClassify', renderSingleTweet);
-  socket.on('newTweet', function(tweet){console.log(tweet);});
+  socket.on('newTweet', scrollTweets);
+
 
   $('#classification button').click(function(){
     $(this)
@@ -29,19 +32,24 @@ $(document).ready(function(){
     $(this).parent().addClass('active')
       .siblings().removeClass('active');
 
-    if(menuItem == 'classify') {
-      $('#tweets').hide();
+    if(menuItem == 'stream') {
+      $('#tweets .content').empty();
+      $('#tweets').show().addClass('stream');
+      $('#classify').hide();
+      $('#tweets h1').html('Live Tweets');
+    } else if(menuItem == 'classify') {
+      $('#tweets').hide().removeClass('stream');
       $('#classify').show();
     } else if(menuItem == 'all'){
       $('#tweets .content').empty()
-      $('#tweets').show();
+      $('#tweets').show().removeClass('stream');
       $('#classify').hide();
       $('#tweets h1').html('All Tweets');
 
       $.getJSON('/api/getTweets', renderTweets);
     } else {
       $('#tweets .content').empty()
-      $('#tweets').show();
+      $('#tweets').show().removeClass('stream');
       $('#classify').hide();
       $('#tweets h1').html(languages[menuItem] + ' Tweets');
 
@@ -49,6 +57,33 @@ $(document).ready(function(){
     }
     return false;
   });
+
+  $('#pause').click(function(){
+    pause = (pause) ? false : true;
+    $('span', this).html( (pause) ? 'Play' : 'Pause');
+    $('i', this).removeClass().addClass( (pause) ? 'icon-play' : 'icon-pause' );
+  });
+
+  function scrollTweets(tweet){
+    if($('#tweets').is(':visible') && !pause){
+      tweet.text = parseTweetURL(tweet.text);
+      tweet.predicted_language = {
+          name: languages[tweet.predicted_language]
+        , code: tweet.predicted_language
+      }
+      var div = ich.showTweet(tweet);
+      var tweetDivs = $('#tweets .tweet');
+      if(tweetDivs.length > 60){
+        var tweetsToRemove = $('#tweets .tweet:lt(' + (tweetDivs.length - 50) +')');
+
+        tweetsToRemove.slideUp(function(){
+          tweetsToRemove.remove();
+        });
+      }
+      $('#tweets .content').append(div);
+      $('.timeago').timeago();
+    }
+  }
 
   function renderTweets(tweets){
     tweets.forEach(function(tweet){
@@ -59,6 +94,7 @@ $(document).ready(function(){
       }
       var div = ich.showTweet(tweet);
       $('#tweets .content').append(div);
+      $('.timeago').timeago();
     });
   }
 

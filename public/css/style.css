@@ -1,3 +1,7 @@
+#classify{
+  display:none;
+}
+
 #classification{
   padding:5px;
 }
@@ -6,12 +10,12 @@
   width:125px;
 }
 
-
 h1{
  margin-bottom:10px;
 }
 
 .tweet{
+  height:95px;
   overflow:hidden;
   padding-top:8px;
 }
@@ -74,7 +78,28 @@ h1{
 
 
 #tweets{
-  display:none;
+}
+
+#tweets h1{
+  float:left;
+  width:600px;
+}
+
+#pause{
+  display:inline-block;
+  float:right;
+}
+
+.contentContainer{
+  clear:both;
+  height:730px;
+  overflow:hidden;
+  position:relative;
+}
+
+.content{
+  position:absolute;
+  bottom:0;
 }
 
 footer{

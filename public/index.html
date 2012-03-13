@@ -13,7 +13,8 @@
         <a class="brand" href="#">Naive Tweets</a>
         <div class="nav-collapse">
           <ul class="nav" id="top-menu">
-            <li class="classify active" data-menu="classify"><a href="/">Classify Tweets</a></li>
+            <li class="stream active" data-menu="stream"><a href="/">Live Tweets</a></li>
+            <li class="classify" data-menu="classify"><a href="/">Classify Tweets</a></li>
             <li data-menu="all"><a href="#">All Tweets</a></li>
             <li data-menu="en"><a href="#">English</a></li>
             <li data-menu="es"><a href="#">Spanish</a></li>
@@ -46,9 +47,11 @@
     </div>
 
     <div id="tweets">
-      <h1 id="pageTitle">Classified Tweets</h1>
-
-      <div class="content"></div>
+      <h1 id="pageTitle">Live Tweets</h1>
+      <button id="pause" class="btn"><i class="icon-pause"></i> <span>Pause</span></button>
+      <div class="contentContainer">
+        <div class="content"></div>
+      </div>
     </div>
 
     <footer>
