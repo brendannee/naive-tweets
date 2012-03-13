@@ -72,8 +72,18 @@
     </div>
   </script>
 
-    <script id="showTweet" type="text/html">
-      <div class="tweet well">
+  <script id="showTweet" type="text/html">
+    <div class="tweet well">
+      <div class="predicted_language"><img src="img/flags/{{predicted_language.code}}.png"> {{predicted_language.name}}</div>
+      <div class="stats">
+        <strong>Probabilities</strong><br>
+        <div><img src="img/flags/en.png" title="English"> {{probability.en}}</div>
+        <div><img src="img/flags/es.png" title="Spanish"> {{probability.es}}</div>
+        <div><img src="img/flags/pt.png" title="Portugese"> {{probability.pt}}</div>
+        <div><img src="img/flags/fr.png" title="French"> {{probability.fr}}</div>
+        <div><img src="img/flags/other.png" title="Other"> {{probability.other}}</div>
+      </div>
+
       <div class="profile_image">
         <img src="{{user.profile_image_url}}" alt="{{twitter}}">
       </div>
@@ -83,13 +93,6 @@
         <div class="location">{{user.location}}</div>
         <p class="text">{{{text}}}</p>
         <p class="timeago created_at" title="{{created_at}}">{{created_at}}</p>
-      </div>
-      <div class="stats">
-        <div>English: {{probability.en}}</div>
-        <div>Spanish: {{probability.es}}</div>
-        <div>Portugese: {{probability.pt}}</div>
-        <div>French: {{probability.fr}}</div>
-        <div>Other Language: {{probability.other}}</div>
       </div>
     </div>
   </script>

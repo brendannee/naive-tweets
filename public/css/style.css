@@ -13,12 +13,19 @@ h1{
 
 .tweet{
   overflow:hidden;
+  padding-top:8px;
+}
+
+.tweet .predicted_language{
+  padding-bottom:8px;
+  width:650px;
+  float:left;
 }
 
 .tweet .profile_image{
   float:left;
+  clear:left;
   width:65px;
-  height:100px;
 }
 
 .tweet .tweetContent{
@@ -52,9 +59,13 @@ h1{
 
 .tweet .stats{
   margin-left:15px;
-  font-size:14px
+  font-size:14px;
   width:100px;
-  float:left;
+  float:right;
+}
+
+.tweet .stats img{
+  padding-right:5px;
 }
 
 .tweet .trained{
@@ -68,6 +79,7 @@ h1{
 
 footer{
   margin-top:50px;
+  padding:8px 0;
   border-top:1px #CCC solid;
   text-align:right;
 }

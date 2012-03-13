@@ -7,11 +7,11 @@ window.log = function f(){ log.history = log.history || []; log.history.push(arg
 (function(){try{console.log();return window.console;}catch(a){return (window.console={});}}());
 
 
-var tweet_id;
-
 
 $(document).ready(function(){
-  var socket = io.connect('http://localhost');
+  var tweet_id
+    , languages = {en: "English", es: "Spanish", pt: "Portugese", fr: "French", other: "Other"}
+    , socket = io.connect('http://localhost');
   socket.emit('requestTweet');
   socket.on('toClassify', renderSingleTweet);
 
@@ -42,7 +42,7 @@ $(document).ready(function(){
       $('#tweets .content').empty()
       $('#tweets').show();
       $('#classify').hide();
-      $('#tweets h1').html(menuItem + ' Tweets');
+      $('#tweets h1').html(languages[menuItem] + ' Tweets');
 
       $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
     }
@@ -52,10 +52,10 @@ $(document).ready(function(){
   function renderTweets(tweets){
     tweets.forEach(function(tweet){
       tweet.text = parseTweetURL(tweet.text);
-      for(var language in tweet.probability){
-        tweet.probability[language] = Math.round(language*1000)/1000;
+      tweet.predicted_language = {
+          name: languages[tweet.predicted_language]
+        , code: tweet.predicted_language
       }
-
       var div = ich.showTweet(tweet);
       $('#tweets .content').append(div);
     });

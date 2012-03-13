@@ -1,5 +1,4 @@
-require('../models/Tweet');
-require('../models/Probability');
+require('../models/models');
 
 
 var async = require('async')
@@ -65,9 +64,9 @@ module.exports = function routes(app){
     Tweet.find({})
       .limit(100)
       .sort('probability.' + req.params.language, -1)
-       .run(function(e, results){
+      .run(function(e, results){
         res.json(results);
-       });
+      });
   });
 
 
@@ -124,7 +123,7 @@ module.exports = function routes(app){
     });
 
     function parseTweet(tweet, cb){
-      async.forEach(splitWords(tweet.text), function(word, cb){
+      async.forEach(tweet.getWords(), function(word, cb){
         if(word){
           var updateField = "count." + tweet.trained_language
             , update = {$inc: {}};
@@ -134,37 +133,6 @@ module.exports = function routes(app){
       }, cb);
     }
   }
-
-  function splitWords(tweet){
-    //Split tweet into words
-
-    //remove all username
-    tweet = tweet.replace(/@([A-Za-z0-9_]+)/g,"");
-
-    //remove all hashtags
-    tweet = tweet.replace(/#([A-Za-z0-9_]+)/g,"");
-
-    //remove all URLs
-    tweet = tweet.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
-
-    //remove all punctuation
-    tweet = tweet.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
-
-    //make all lowercase
-    tweet = tweet.toLowerCase();
-
-    //split spaces
-    var words = tweet.split(/\s+/);
-
-    //filter to unique words
-    words = _.uniq(words);
-
-    //remove blanks
-    words = _.without(words, '');
-
-    return words;
-  }
-
 
   function calculateWordProbabilities(cb){
     //Get a list of all words and put into probabilities table
@@ -192,8 +160,8 @@ module.exports = function routes(app){
         totalWordCount = _.reduce(wordCount, function(memo, num){ return memo + num; }, 0);
         totalTweetCount = _.reduce(tweetCount, function(memo, num){ return memo + num; }, 0);
 
-        if(totalWordCount >= 5){
-          //if word occurs at least 5 times, then use it to calculate probability
+        if(totalWordCount >= 4){
+          //if word occurs at least 4 times, then use it to calculate probability
           //Minimum probability of 0.01
 
           languages.forEach(function(language){
@@ -212,72 +180,12 @@ module.exports = function routes(app){
 
   function classifyTweets(cb){
     //classify each tweet
-    Tweet.find({}, function(e, results){
-      async.forEach(results, classifyTweet, cb);
-
-      function classifyTweet(tweet, cb){
-        var words = splitWords(tweet.text)
-          , probability = {}
-          , query = [];
-
-        //build 'or' query
-        words.forEach(function(word){
-          query.push({ word: word });
-        });
-
-        Probability
-          .find()
-          .or(query)
-          .run(function(e, results){
-            var update = {};
-            languages.forEach(function(language){
-              var product = _.reduce(results, function(memo, word){ return memo * word.probability[language] || memo; }, 1);
-              var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language]) || memo; }, 1);
-              //minimum probability of 0.01
-              probability[language] = product / ( product + subtract ) || 0.01;
-            });
-
-            Tweet.update({ _id: tweet._id }, { $set: {probability: probability } }, cb);
-          });
-        /*
-        async.forEach(words, getProbabilities, function(e){
-          var notEnglishProb = calculateProb(probabilities, 'not_english')
-            , spamProb = calculateProb(probabilities, 'spam')
-            , interestingProb = calculateProb(probabilities, 'interesting');
-
-          function calculateProb(probabilities, key){
-            var product = _.reduce(probabilities, function(memo, word){ return memo * word[key]; }, 1);
-            var subtract = _.reduce(probabilities, function(memo, word){ return memo * (1 - word[key]) }, 1);
-            return product / ( product + subtract );
-          }
-
-        });
-
-        function getProbabilities(word, cb){
-          //lookup probabilities for each word
-          var query = {}
-
-          Probability.findOne({word: word}, function(e, result){
-            if(result){
-              var wordProb = {word: word};
-              languages.forEach(function(language){
-                probabilities.push({
-                    word: word
-                  , not_english: result.not_english
-                  , spam: result.spam
-                  , interesting: result.interesting
-                });
-              });
-            }
-
-            cb();
-          });
-        }
-        */
-      }
+    Tweet.find({}, function(e, tweets){
+      async.forEach(tweets, function(tweet, cb){
+        tweet.classify(cb);
+      }, cb);
     });
   }
-
 
 
   //Nothing specified
