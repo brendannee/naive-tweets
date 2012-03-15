@@ -34,7 +34,7 @@ $(document).ready(function(){
 
     if(menuItem == 'stream') {
       $('#tweets .content').empty();
-      $('#tweets').show().addClass('stream');
+      $('#tweets').show().attr('data-stream', 'true');
       $('#classify').hide();
       $('#tweets h1').html('Live Tweets');
     } else if(menuItem == 'classify') {
@@ -42,14 +42,14 @@ $(document).ready(function(){
       $('#classify').show();
     } else if(menuItem == 'all'){
       $('#tweets .content').empty()
-      $('#tweets').show().removeClass('stream');
+      $('#tweets').show().attr('data-stream', 'false');
       $('#classify').hide();
       $('#tweets h1').html('All Tweets');
 
       $.getJSON('/api/getTweets', renderTweets);
     } else {
       $('#tweets .content').empty()
-      $('#tweets').show().removeClass('stream');
+      $('#tweets').show().attr('data-stream', 'false');
       $('#classify').hide();
       $('#tweets h1').html(languages[menuItem] + ' Tweets');
 
@@ -65,7 +65,7 @@ $(document).ready(function(){
   });
 
   function scrollTweets(tweet){
-    if($('#tweets').is(':visible') && !pause){
+    if($('#tweets').attr('data-stream') == 'true' && !pause){
       tweet.text = parseTweetURL(tweet.text);
       tweet.predicted_language = {
           name: languages[tweet.predicted_language]
