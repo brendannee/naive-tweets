@@ -11,7 +11,6 @@ module.exports = function routes(app){
   var io = require('socket.io').listen(app)
     , Tweet = app.set('db').model('Tweet')
     , Probability = app.set('db').model('Probability')
-    , options = app.set('options')
     , twit = app.set('twit');
 
   /* Socket IO */

@@ -1,8 +1,6 @@
 try{
   var options = require('./options.js');
-} catch(e) {
-  console.log('Can\'t load options.js with twitter auth keys');
-}
+} catch(e) { }
 
 var express = require('express')
   , mongoose = require('mongoose')
@@ -19,7 +17,6 @@ module.exports = function(app){
         .enable('error templates')
         .use(express.static(__dirname + '/public'))
         .set('db', db)
-        .set('options', options)
         .set('twit', new twitter({
           consumer_key: process.env['TWITTER_CONSUMER_KEY'] || options.consumer_key,
           consumer_secret: process.env['TWITTER_CONSUMER_SECRET'] || options.consumer_secret,
