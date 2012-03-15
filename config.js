@@ -6,10 +6,8 @@ try{
 
 var express = require('express')
   , mongoose = require('mongoose')
-  , dbName = process.env['MONGO_NODE_DATABASE'] || options.mongo_node_database
-  , host = process.env['MONGO_NODE_HOST'] || options.mongo_node_host
-  , port = process.env['MONGO_NODE_PORT'] || options.mongo_node_port
-  , db = (port) ? mongoose.connect(host, dbName, port) : mongoose.connect(host, dbName);
+  , mongoURI = process.env['MONGO_URI'] || options.mongo_uri
+  , db = mongoose.connect(mongoURI);
 
 
 module.exports = function(app){
