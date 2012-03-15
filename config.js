@@ -5,7 +5,8 @@ try{
 var express = require('express')
   , mongoose = require('mongoose')
   , mongoURI = process.env['MONGO_URI'] || options.mongo_uri
-  , db = mongoose.connect(mongoURI);
+  , db = mongoose.connect(mongoURI)
+  , twitter = require('ntwitter');
 
 
 module.exports = function(app){

@@ -3,8 +3,7 @@ require('../models/models');
 
 var async = require('async')
   , _ = require('underscore')
-  twitter = require('ntwitter')
-  languages = ['en', 'es', 'pt', 'fr', 'other'];
+  , languages = ['en', 'es', 'pt', 'fr', 'other'];
 
 module.exports = function routes(app){
 
@@ -15,9 +14,8 @@ module.exports = function routes(app){
 
   /* Socket IO */
 
-  //Config for heroku
-  io.configure(function () {
-    io.set("transports", ["xhr-polling"]);
+  io.configure(function () { 
+    io.set("transports", ["xhr-polling"]); 
     io.set("polling duration", 10);
   });
 
