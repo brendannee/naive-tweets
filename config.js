@@ -23,10 +23,10 @@ module.exports = function(app){
         .set('db', db)
         .set('options', options)
         .set('twit', new twitter({
-          consumer_key: options.consumer_key,
-          consumer_secret: options.consumer_secret,
-          access_token_key: options.access_token_key,
-          access_token_secret: options.access_token_secret
+          consumer_key: process.env['TWITTER_CONSUMER_KEY'] || options.consumer_key,
+          consumer_secret: process.env['TWITTER_CONSUMER_SECRET'] || options.consumer_secret,
+          access_token_key: process.env['TWITTER_ACCESS_TOKEN_KEY'] || options.access_token_key,
+          access_token_secret: process.env['TWITTER_ACCESS_TOKEN_SECRET'] || options.access_token_secret
         }));
   });
 
