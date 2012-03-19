@@ -11,7 +11,7 @@ window.log = function f(){ log.history = log.history || []; log.history.push(arg
 $(document).ready(function(){
   var tweet_id
     , languages = {en: "English", es: "Spanish", pt: "Portugese", fr: "French", other: "Other"}
-    , socket = io.connect('http://localhost')
+    , socket = io.connect()
     , pause = false;
 
   socket.emit('requestTweet');
