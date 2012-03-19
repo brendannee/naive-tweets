@@ -12,7 +12,8 @@ $(document).ready(function(){
   var tweet_id
     , languages = {en: "English", es: "Spanish", pt: "Portugese", fr: "French", other: "Other"}
     , socket = io.connect()
-    , pause = false;
+    , pause = false
+    , tweetQueue = [];
 
   socket.emit('requestTweet');
   socket.on('toClassify', renderSingleTweet);
@@ -65,32 +66,38 @@ $(document).ready(function(){
   });
 
   function scrollTweets(tweet){
-    if($('#tweets').attr('data-stream') == 'true' && !pause){
-      tweet.text = parseTweetURL(tweet.text);
-      tweet.predicted_language = {
-          name: languages[tweet.predicted_language]
-        , code: tweet.predicted_language
-      }
-      var div = ich.showTweet(tweet);
-      var tweetDivs = $('#tweets .tweet');
-      if(tweetDivs.length > 60){
-        var tweetsToRemove = $('#tweets .tweet:lt(' + (tweetDivs.length - 50) +')');
+    var tweetDivs = $('#tweets .tweet');
 
-        tweetsToRemove.slideUp(function(){
-          tweetsToRemove.remove();
-        });
+    if($('#tweets').attr('data-stream') == 'true' && !pause){
+      console.log(tweet);
+      tweetQueue.push(tweet);
+      if(tweetQueue.length >= 10 || tweetDivs.length <= 50){
+        renderTweets(tweetQueue);
+
+        //remove elements from the dom every 10 tweets
+        if(tweetDivs.length > 60){
+          var tweetsToRemove = $('#tweets .tweet:lt(' + (tweetDivs.length - 50) +')');
+
+          tweetsToRemove.slideUp(function(){
+            tweetsToRemove.remove();
+          });
+        }
       }
-      $('#tweets .content').append(div);
-      $('.timeago').timeago();
     }
   }
 
   function renderTweets(tweets){
+    //reset tweetQueue
+    tweetQueue = [];
+
     tweets.forEach(function(tweet){
       tweet.text = parseTweetURL(tweet.text);
       tweet.predicted_language = {
           name: languages[tweet.predicted_language]
         , code: tweet.predicted_language
+      }
+      for(var lang in tweet.probability){
+        tweet.probability[lang] = Math.round(tweet.probability[lang]*100)/100;
       }
       var div = ich.showTweet(tweet);
       $('#tweets .content').append(div);

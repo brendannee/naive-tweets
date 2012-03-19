@@ -26,6 +26,11 @@ h1{
   float:left;
 }
 
+.tweet .predicted_language img{
+  width:16px;
+  height:11px;
+}
+
 .tweet .profile_image{
   float:left;
   clear:left;
@@ -70,6 +75,8 @@ h1{
 
 .tweet .stats img{
   padding-right:5px;
+  width:16px;
+  height:11px;
 }
 
 .tweet .trained{
