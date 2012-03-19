@@ -1,7 +1,5 @@
-require('../models/models');
-
-
-var async = require('async')
+var models = require('../models/models')
+  , async = require('async')
   , _ = require('underscore')
   , languages = ['en', 'es', 'pt', 'fr', 'other'];
 
