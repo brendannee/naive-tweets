@@ -21,6 +21,7 @@ $(document).ready(function(){
 
 
   $('#classification button').click(function(){
+    $('#loading').show();
     $(this)
       .addClass('btn-success')
       .siblings().addClass('disabled');
@@ -35,26 +36,28 @@ $(document).ready(function(){
 
     if(menuItem == 'stream') {
       $('#tweets .content').empty();
-      $('#tweets').show().attr('data-stream', 'true');
+      $('#tweets').show().addClass('stream');
       $('#classify').hide();
       $('#tweets h1').html('Live Tweets');
+      pause = false;
     } else if(menuItem == 'classify') {
       $('#tweets').hide().removeClass('stream');
       $('#classify').show();
+      pause = true;
     } else if(menuItem == 'all'){
       $('#tweets .content').empty()
-      $('#tweets').show().attr('data-stream', 'false');
+      $('#tweets').show().removeClass('stream');
       $('#classify').hide();
       $('#tweets h1').html('All Tweets');
-
       $.getJSON('/api/getTweets', renderTweets);
+      pause = true;
     } else {
       $('#tweets .content').empty()
-      $('#tweets').show().attr('data-stream', 'false');
+      $('#tweets').show().removeClass('stream');
       $('#classify').hide();
       $('#tweets h1').html(languages[menuItem] + ' Tweets');
-
       $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
+      pause = true;
     }
     return false;
   });
@@ -66,13 +69,15 @@ $(document).ready(function(){
   });
 
   function scrollTweets(tweet){
-    var tweetDivs = $('#tweets .tweet');
+    if(!pause){
+      var tweetDivs = $('#tweets .tweet');
 
-    if($('#tweets').attr('data-stream') == 'true' && !pause){
-      console.log(tweet);
       tweetQueue.push(tweet);
       if(tweetQueue.length >= 10 || tweetDivs.length <= 50){
         renderTweets(tweetQueue);
+        tweetQueue = [];
+
+        $('#loading').hide();
 
         //remove elements from the dom every 10 tweets
         if(tweetDivs.length > 60){
@@ -87,10 +92,18 @@ $(document).ready(function(){
   }
 
   function renderTweets(tweets){
-    //reset tweetQueue
-    tweetQueue = [];
-
+    var content = $('<div>');
     tweets.forEach(function(tweet){
+      //update format to match standard stream
+      if(!tweet.user){
+        tweet.user = {
+            profile_image_url: tweet.profile_image_url
+          , screen_name: tweet.from_user
+          , name: tweet.from_user_name
+          , location: (tweet.geo) ? tweet.geo.coordinates[0] + ', ' + tweet.geo.coordinates[1] : ''
+        }
+      }
+
       tweet.text = parseTweetURL(tweet.text);
       tweet.predicted_language = {
           name: languages[tweet.predicted_language]
@@ -99,19 +112,25 @@ $(document).ready(function(){
       for(var lang in tweet.probability){
         tweet.probability[lang] = Math.round(tweet.probability[lang]*100)/100;
       }
-      var div = ich.showTweet(tweet);
-      $('#tweets .content').append(div);
-      $('.timeago').timeago();
+      console.log(tweet);
+      content.append(ich.showTweet(tweet));
     });
+    $('#tweets .content').append(content.html());
+    $('.timeago').timeago();
+
+    $('#loading').hide();
   }
 
   function renderSingleTweet(tweet){
-    $('#classification button').removeClass('btn-success disabled');
-    tweet_id = tweet.id_str;
-    tweet.text = parseTweetURL(tweet.text);
-    var div = ich.classifyTweet(tweet);
-    $('#tweet').html(div);
-    $('.timeago').timeago();
+    try{
+      $('#classification button').removeClass('btn-success disabled');
+      tweet_id = tweet.id_str;
+      tweet.text = parseTweetURL(tweet.text);
+      var div = ich.classifyTweet(tweet);
+      $('#tweet').html(div);
+      $('.timeago').timeago();
+      $('#loading').hide();
+    } catch(e) { } 
   }
 
 

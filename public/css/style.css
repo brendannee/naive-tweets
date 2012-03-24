@@ -1,3 +1,17 @@
+.container{
+  position:relative;
+}
+
+#loading{
+  position:absolute;
+  top:100px;
+  right:425px;
+  width:150px;
+  margin:0 auto;
+  font-weight:bold;
+  background: url(../img/ajax-loader.gif) 150px 22px no-repeat;
+}
+
 #classify{
   display:none;
 }
@@ -100,11 +114,15 @@ h1{
 .contentContainer{
   clear:both;
   height:730px;
-  overflow:hidden;
+  overflow:scroll;
   position:relative;
 }
 
-.content{
+#tweets.stream .contentContainer{
+  overflow:hidden;
+}
+
+#tweets.stream .content{
   position:absolute;
   bottom:0;
 }
