@@ -10,8 +10,26 @@ var TweetSchema = new mongoose.Schema({
     , created_at        :  { type: String }
     , probability       :  {
         en                :  { type: Number, index: true }
+      , ar                :  { type: Number, index: true }
+      , zh                :  { type: Number, index: true }
+      , de                :  { type: Number, index: true }
+      , el                :  { type: Number, index: true }
+      , et                :  { type: Number, index: true }
       , es                :  { type: Number, index: true }
-      , pt                :  { type: Number, index: true }
+      , fi                :  { type: Number, index: true }
+      , id                :  { type: Number, index: true }
+      , it                :  { type: Number, index: true }
+      , ja                :  { type: Number, index: true }
+      , ko                :  { type: Number, index: true }
+      , mn                :  { type: Number, index: true }
+      , nn                :  { type: Number, index: true }
+      , fa                :  { type: Number, index: true }
+      , ru                :  { type: Number, index: true }
+      , sv                :  { type: Number, index: true }
+      , th                :  { type: Number, index: true }
+      , tr                :  { type: Number, index: true }
+      , vi                :  { type: Number, index: true }
+      , es                :  { type: Number, index: true }
       , fr                :  { type: Number, index: true }
       , other             :  { type: Number, index: true }
     }
@@ -103,17 +121,53 @@ var Tweet = mongoose.model('Tweet', TweetSchema);
 var Probability = mongoose.model('Probability', new mongoose.Schema({
       word               :  { type: String, unique: true }
     , probability        :  {
-        en                  : { type: Number, index: true }
-      , es                  : { type: Number, index: true }
-      , pt                  : { type: Number, index: true }
-      , fr                  : { type: Number, index: true }
-      , other               : { type: Number, index: true }
+        en                :  { type: Number, index: true }
+      , ar                :  { type: Number, index: true }
+      , zh                :  { type: Number, index: true }
+      , de                :  { type: Number, index: true }
+      , el                :  { type: Number, index: true }
+      , et                :  { type: Number, index: true }
+      , es                :  { type: Number, index: true }
+      , fi                :  { type: Number, index: true }
+      , id                :  { type: Number, index: true }
+      , it                :  { type: Number, index: true }
+      , ja                :  { type: Number, index: true }
+      , ko                :  { type: Number, index: true }
+      , mn                :  { type: Number, index: true }
+      , nn                :  { type: Number, index: true }
+      , fa                :  { type: Number, index: true }
+      , ru                :  { type: Number, index: true }
+      , sv                :  { type: Number, index: true }
+      , th                :  { type: Number, index: true }
+      , tr                :  { type: Number, index: true }
+      , vi                :  { type: Number, index: true }
+      , es                :  { type: Number, index: true }
+      , fr                :  { type: Number, index: true }
+      , other             :  { type: Number, index: true }
     }
     , count              :  {
-        en                  : { type: Number, index: true }
-      , es                  : { type: Number, index: true }
-      , pt                  : { type: Number, index: true }
-      , fr                  : { type: Number, index: true }
-      , other               : { type: Number, index: true }
+        en                :  { type: Number, index: true }
+      , ar                :  { type: Number, index: true }
+      , zh                :  { type: Number, index: true }
+      , de                :  { type: Number, index: true }
+      , el                :  { type: Number, index: true }
+      , et                :  { type: Number, index: true }
+      , es                :  { type: Number, index: true }
+      , fi                :  { type: Number, index: true }
+      , id                :  { type: Number, index: true }
+      , it                :  { type: Number, index: true }
+      , ja                :  { type: Number, index: true }
+      , ko                :  { type: Number, index: true }
+      , mn                :  { type: Number, index: true }
+      , nn                :  { type: Number, index: true }
+      , fa                :  { type: Number, index: true }
+      , ru                :  { type: Number, index: true }
+      , sv                :  { type: Number, index: true }
+      , th                :  { type: Number, index: true }
+      , tr                :  { type: Number, index: true }
+      , vi                :  { type: Number, index: true }
+      , es                :  { type: Number, index: true }
+      , fr                :  { type: Number, index: true }
+      , other             :  { type: Number, index: true }
     }
   }, {strict:true}));
