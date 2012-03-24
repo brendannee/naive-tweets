@@ -1,7 +1,8 @@
 var models = require('../models/models')
+  , train = require('../lib/train')
   , async = require('async')
   , _ = require('underscore')
-  , languages = ['en', 'es', 'pt', 'fr', 'other'];
+  , languages = require('../lib/languages');
 
 module.exports = function routes(app){
 
@@ -90,17 +91,17 @@ module.exports = function routes(app){
         .run(function(e, results){
           var update = {};
           languages.forEach(function(language){
-            var product = _.reduce(results, function(memo, word){ return memo * word.probability[language] || memo; }, 1);
-            var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language]) || memo; }, 1);
+            var product = _.reduce(results, function(memo, word){ return memo * word.probability[language.code] || memo; }, 1);
+            var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language.code]) || memo; }, 1);
 
             //minimum probability of 0.01
             var result = product / ( product + subtract ) || 0.01;
 
-            probability[language] = Math.round(result*100000)/100000;
+            probability[language.code] = Math.round(result*100000)/100000;
 
             if(result > max_prob) { 
               max_prob = result;
-              predicted_language = language;
+              predicted_language = language.code;
             }
           });
 
@@ -114,7 +115,6 @@ module.exports = function routes(app){
 
         });
     }
-
   });
 
 
@@ -219,9 +219,9 @@ module.exports = function routes(app){
 
       //Get counts for each tweet and word
       async.forEach(languages, function(language, cb){
-        wordCount[language] = word.count[language] || 0;
-        Tweet.count({ trained_language: language }, function(e, count){
-          tweetCount[language] = count;
+        wordCount[language.code] = word.count[language.code] || 0;
+        Tweet.count({ trained_language: language.code }, function(e, count){
+          tweetCount[language.code] = count;
           cb();
         });
       }, function(e, results){
@@ -234,7 +234,7 @@ module.exports = function routes(app){
           //Minimum probability of 0.01
 
           languages.forEach(function(language){
-            word.probability[language] = Math.max(0.01, ( wordCount[language] / tweetCount[language] ) / ( ( wordCount[language] / tweetCount[language] ) + ( ( totalWordCount - wordCount[language] ) / ( totalTweetCount - tweetCount[language] ) ) ) ) || 0.01;
+            word.probability[language.code] = Math.max(0.01, ( wordCount[language.code] / tweetCount[language.code] ) / ( ( wordCount[language.code] / tweetCount[language.code] ) + ( ( totalWordCount - wordCount[language.code] ) / ( totalTweetCount - tweetCount[language.code] ) ) ) ) || 0.01;
           });
 
           //save probabilities
@@ -255,6 +255,12 @@ module.exports = function routes(app){
       }, cb);
     });
   }
+
+  app.get('/api/train', function(req, res){
+    train(app, function(){
+      res.json({status: 'completed'});
+    });
+  });
 
 
   //Nothing specified

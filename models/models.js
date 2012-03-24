@@ -1,5 +1,6 @@
 var mongoose = require('mongoose')
-  , _ = require('underscore');
+  , _ = require('underscore')
+  , languages = require('../lib/languages');
 
 
 
@@ -17,6 +18,7 @@ var TweetSchema = new mongoose.Schema({
     , predicted_language:  { type: String }
     , trained_language  :  { type: String }
     , trained           :  { type: Boolean, index: true, default: false }
+    , autotrained       :  { type: Boolean, default: false }
   });
 
 TweetSchema.methods.getWords = function getWords(cb){
@@ -69,17 +71,17 @@ TweetSchema.methods.classify = function classify(cb){
     .run(function(e, results){
       var update = {};
       languages.forEach(function(language){
-        var product = _.reduce(results, function(memo, word){ return memo * word.probability[language] || memo; }, 1);
-        var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language]) || memo; }, 1);
+        var product = _.reduce(results, function(memo, word){ return memo * word.probability[language.code] || memo; }, 1);
+        var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language.code]) || memo; }, 1);
 
         //minimum probability of 0.01
         var result = product / ( product + subtract ) || 0.01;
 
-        probability[language] = Math.round(result*100000)/100000;
+        probability[language.code] = Math.round(result*100000)/100000;
 
         if(result > max_prob) { 
           max_prob = result;
-          predicted_language = language;
+          predicted_language = language.code;
         }
       });
 
