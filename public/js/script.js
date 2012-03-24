@@ -81,8 +81,6 @@ $(document).ready(function(){
         renderTweets(tweetQueue);
         tweetQueue = [];
 
-        $('#loading').hide();
-
         //remove elements from the dom every 10 tweets
         if(tweetDivs.length > 60){
           var tweetsToRemove = $('#tweets .tweet:lt(' + (tweetDivs.length - 50) +')');
@@ -96,6 +94,8 @@ $(document).ready(function(){
   }
 
   function renderTweets(tweets){
+    $('#loading').hide();
+
     var content = $('<div>');
     tweets.forEach(function(tweet){
       //update format to match standard stream
