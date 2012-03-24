@@ -2,25 +2,24 @@
 <html>
 <head>
   <title>Naive Tweets - A Naive Bayesian Classifier for Twitter in Node.js</title>
-  <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" media="screen" charset="utf-8">
+  <link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="screen" charset="utf-8">
 
   <link rel="stylesheet" href="css/style.css" type="text/css" media="screen">
 </head>
 <body>
-  <div class="navbar">
+  <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
       <div class="container">
         <a class="brand" href="#">Naive Tweets</a>
         <div class="nav-collapse">
           <ul class="nav" id="top-menu">
             <li class="stream active" data-menu="stream"><a href="/">Live Tweets</a></li>
-            <li class="classify" data-menu="classify"><a href="/">Classify Tweets</a></li>
             <li data-menu="all"><a href="#">All Tweets</a></li>
             <li data-menu="en"><a href="#">English</a></li>
             <li data-menu="es"><a href="#">Spanish</a></li>
             <li data-menu="pt"><a href="#">Portugese</a></li>
             <li data-menu="fr"><a href="#">French</a></li>
-            <li data-menu="other"><a href="#">Other Languages</a></li>
+            <li data-menu="other"><a href="#">Other</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -30,23 +29,6 @@
   <div class="container">
 
     <div id="loading" class="well">Loading Tweets...</div>
-
-    <div id="classify">
-
-      <h1 id="pageTitle">Classify this tweet</h1>
-
-
-      <div id="tweet" class="well"></div>
-
-      <div id="classification">
-        <button class="btn" id="en">English</button>
-        <button class="btn" id="es">Spanish</button>
-        <button class="btn" id="pt">Portugese</button>
-        <button class="btn" id="fr">French</button>
-        <button class="btn" id="other">Other</button>
-      </div>
-
-    </div>
 
     <div id="tweets" class="stream">
       <h1 id="pageTitle">Live Tweets</h1>
@@ -61,6 +43,10 @@
     </footer>
 
   </div> <!-- /container -->
+
+
+
+
 
   <script id="classifyTweet" type="text/html">
     <div class="tweet">
