@@ -10,13 +10,21 @@ window.log = function f(){ log.history = log.history || []; log.history.push(arg
 
 $(document).ready(function(){
   var tweet_id
-    , languages = {en: "English", es: "Spanish", pt: "Portugese", fr: "French", other: "Other"}
+    , languages
     , socket = io.connect()
     , pause = false
     , tweetQueue = [];
 
-  socket.emit('requestTweet');
-  socket.on('toClassify', renderSingleTweet);
+  //get languages
+  $.getJSON('/api/languages', function(data){ 
+    languages = data; 
+    languages.forEach(function(language){
+      //build dropdown menu
+      $('#languages .dropdown-menu').append('<li><a href="#" data-menu="' + language.code + '">' + language.name + '</a></li>');
+    });
+    $('.dropdown-toggle').dropdown();
+  });
+
   socket.on('newTweet', scrollTweets);
 
 
@@ -29,7 +37,7 @@ $(document).ready(function(){
   });
 
   $('#top-menu li a').click(function(){
-    var menuItem = $(this).parent().attr('data-menu');
+    var menuItem = $(this).attr('data-menu');
 
     $(this).parent().addClass('active')
       .siblings().removeClass('active');
@@ -40,25 +48,21 @@ $(document).ready(function(){
       $('#classify').hide();
       $('#tweets h1').html('Live Tweets');
       pause = false;
-    } else if(menuItem == 'classify') {
-      $('#tweets').hide().removeClass('stream');
-      $('#classify').show();
-      pause = true;
-    } else if(menuItem == 'all'){
-      $('#tweets .content').empty()
-      $('#tweets').show().removeClass('stream');
-      $('#classify').hide();
-      $('#tweets h1').html('All Tweets');
-      $.getJSON('/api/getTweets', renderTweets);
-      pause = true;
-    } else {
-      $('#tweets .content').empty()
-      $('#tweets').show().removeClass('stream');
-      $('#classify').hide();
-      $('#tweets h1').html(languages[menuItem] + ' Tweets');
-      $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
-      pause = true;
     }
+
+    return false;
+  });
+ 
+  $('#top-menu').on('click', 'li li a', function(){
+    var menuItem = $(this).attr('data-menu');
+
+    $('#tweets .content').empty()
+    $('#tweets').show().removeClass('stream');
+    $('#classify').hide();
+    $('#tweets h1').html(languages[menuItem] + ' Tweets');
+    $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
+    pause = true;
+
     return false;
   });
 
@@ -112,7 +116,6 @@ $(document).ready(function(){
       for(var lang in tweet.probability){
         tweet.probability[lang] = Math.round(tweet.probability[lang]*100)/100;
       }
-      console.log(tweet);
       content.append(ich.showTweet(tweet));
     });
     $('#tweets .content').append(content.html());
@@ -132,8 +135,6 @@ $(document).ready(function(){
       $('#loading').hide();
     } catch(e) { } 
   }
-
-
 });
 
 

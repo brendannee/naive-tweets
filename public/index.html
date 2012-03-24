@@ -13,13 +13,15 @@
         <a class="brand" href="#">Naive Tweets</a>
         <div class="nav-collapse">
           <ul class="nav" id="top-menu">
-            <li class="stream active" data-menu="stream"><a href="/">Live Tweets</a></li>
-            <li data-menu="all"><a href="#">All Tweets</a></li>
-            <li data-menu="en"><a href="#">English</a></li>
-            <li data-menu="es"><a href="#">Spanish</a></li>
-            <li data-menu="pt"><a href="#">Portugese</a></li>
-            <li data-menu="fr"><a href="#">French</a></li>
-            <li data-menu="other"><a href="#">Other</a></li>
+            <li class="stream active"><a href="/" data-menu="stream">Live Tweets</a></li>
+            <li class="dropdown" id="languages">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#languages">
+                Languages
+                <b class="caret"></b>
+              </a>
+              <ul class="dropdown-menu">
+              </ul>
+            </li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
@@ -92,6 +94,7 @@
   <script src="js/jquery-1.7.1.min.js"></script>
   <script src="js/jquery.timeago.js"></script>
   <script src="js/ICanHaz.min.js"></script>
+  <script src="js/bootstrap-dropdown.js"></script>
   <script src="socket.io/socket.io.js"></script>
   <script src="js/script.js"></script>
 </body>

@@ -167,6 +167,11 @@ module.exports = function routes(app){
   });
 
 
+  app.get('/api/languages', function(req, res){
+    res.json(languages);
+  });
+
+
   app.get('/api/process', function(req, res){
     console.log('Scoring words');
     async.series([
