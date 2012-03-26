@@ -1,5 +1,4 @@
 var models = require('../models/models')
-  , train = require('../lib/train')
   , async = require('async')
   , _ = require('underscore')
   , languages = require('../lib/languages');
@@ -260,12 +259,6 @@ module.exports = function routes(app){
       }, cb);
     });
   }
-
-  app.get('/api/train', function(req, res){
-    train(app, function(){
-      res.json({status: 'completed'});
-    });
-  });
 
 
   //Nothing specified
