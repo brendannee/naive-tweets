@@ -12,18 +12,6 @@
   background: url(../img/ajax-loader.gif) 150px 22px no-repeat;
 }
 
-#classify{
-  display:none;
-}
-
-#classification{
-  padding:5px;
-}
-
-#classification button{
-  width:125px;
-}
-
 h1{
  margin-bottom:10px;
 }
@@ -91,17 +79,18 @@ h1{
   padding-right:5px;
   width:16px;
   height:11px;
+  margin-top:-5px;
 }
 
 .tweet .trained{
   font-weight:bold;
 }
 
-
-#tweets{
+#content{
+  margin-top:50px;
 }
 
-#tweets h1{
+#content h1{
   float:left;
   width:600px;
 }
@@ -111,18 +100,18 @@ h1{
   float:right;
 }
 
-.contentContainer{
+.tweetContainer{
   clear:both;
   height:730px;
   overflow:scroll;
   position:relative;
 }
 
-#tweets.stream .contentContainer{
+#content.stream .tweetContainer{
   overflow:hidden;
 }
 
-#tweets.stream .content{
+#content.stream .tweets{
   position:absolute;
   bottom:0;
 }

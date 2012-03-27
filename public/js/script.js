@@ -18,10 +18,10 @@ $(document).ready(function(){
   //get languages
   $.getJSON('/api/languages', function(data){ 
     languages = data; 
-    languages.forEach(function(language){
+    for(var language in languages){
       //build dropdown menu
-      $('#languages .dropdown-menu').append('<li><a href="#" data-menu="' + language.code + '">' + language.name + '</a></li>');
-    });
+      $('#languages .dropdown-menu').append('<li><a href="#" data-menu="' + language + '">' + languages[language]['name'] + '</a></li>');
+    }
     $('.dropdown-toggle').dropdown();
   });
 
@@ -43,10 +43,10 @@ $(document).ready(function(){
       .siblings().removeClass('active');
 
     if(menuItem == 'stream') {
-      $('#tweets .content').empty();
-      $('#tweets').show().addClass('stream');
+      $('#content .tweets').empty();
+      $('#content').show().addClass('stream');
       $('#classify').hide();
-      $('#tweets h1').html('Live Tweets');
+      $('#content h1').html('Live Tweets');
       pause = false;
     }
 
@@ -56,10 +56,10 @@ $(document).ready(function(){
   $('#top-menu').on('click', 'li li a', function(){
     var menuItem = $(this).attr('data-menu');
 
-    $('#tweets .content').empty()
-    $('#tweets').show().removeClass('stream');
+    $('#content .tweets').empty()
+    $('#content').show().removeClass('stream');
     $('#classify').hide();
-    $('#tweets h1').html(languages[menuItem] + ' Tweets');
+    $('#content h1').html(languages[menuItem]['name'] + ' Tweets');
     $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
     pause = true;
 
@@ -74,7 +74,7 @@ $(document).ready(function(){
 
   function scrollTweets(tweet){
     if(!pause){
-      var tweetDivs = $('#tweets .tweet');
+      var tweetDivs = $('.tweetContainer .tweet');
 
       tweetQueue.push(tweet);
       if(tweetQueue.length >= 10 || tweetDivs.length <= 50){
@@ -83,7 +83,7 @@ $(document).ready(function(){
 
         //remove elements from the dom every 10 tweets
         if(tweetDivs.length > 60){
-          var tweetsToRemove = $('#tweets .tweet:lt(' + (tweetDivs.length - 50) +')');
+          var tweetsToRemove = $('.tweetContainer .tweet:lt(' + (tweetDivs.length - 50) +')');
 
           tweetsToRemove.slideUp(function(){
             tweetsToRemove.remove();
@@ -98,42 +98,36 @@ $(document).ready(function(){
 
     var content = $('<div>');
     tweets.forEach(function(tweet){
-      //update format to match standard stream
-      if(!tweet.user){
-        tweet.user = {
-            profile_image_url: tweet.profile_image_url
-          , screen_name: tweet.from_user
-          , name: tweet.from_user_name
-          , location: (tweet.geo) ? tweet.geo.coordinates[0] + ', ' + tweet.geo.coordinates[1] : ''
+      try{
+        //update format to match standard stream
+        if(!tweet.user){
+          tweet.user = {
+              profile_image_url: tweet.profile_image_url
+            , screen_name: tweet.from_user
+            , name: tweet.from_user_name
+            , location: (tweet.geo) ? tweet.geo.coordinates[0] + ', ' + tweet.geo.coordinates[1] : ''
+          }
         }
-      }
 
-      tweet.text = parseTweetURL(tweet.text);
-      tweet.predicted_language = {
-          name: languages[tweet.predicted_language]
-        , code: tweet.predicted_language
-      }
-      for(var lang in tweet.probability){
-        tweet.probability[lang] = Math.round(tweet.probability[lang]*100)/100;
-      }
-      content.append(ich.showTweet(tweet));
+        tweet.text = parseTweetURL(tweet.text);
+        tweet.predicted_language = {
+            name: languages[tweet.predicted_language]['name']
+          , code: tweet.predicted_language
+        }
+        tweet.probabilities = [];
+        for(var language in tweet.probability){
+          if(tweet.probability[language] > 0.3){
+            tweet.probabilities.push( { language:language, probability: Math.min(0.99, Math.round(tweet.probability[language]*100)/100 ), name: languages[language]['name'] } );
+          }
+        }
+        tweet.probabilities.sort(function(a, b){ return b.probability - a.probability; });
+        content.append(ich.showTweet(tweet));
+      } catch(e){}
     });
-    $('#tweets .content').append(content.html());
+    $('#content .tweets').append(content.html());
     $('.timeago').timeago();
 
     $('#loading').hide();
-  }
-
-  function renderSingleTweet(tweet){
-    try{
-      $('#classification button').removeClass('btn-success disabled');
-      tweet_id = tweet.id_str;
-      tweet.text = parseTweetURL(tweet.text);
-      var div = ich.classifyTweet(tweet);
-      $('#tweet').html(div);
-      $('.timeago').timeago();
-      $('#loading').hide();
-    } catch(e) { } 
   }
 });
 

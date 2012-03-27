@@ -18,59 +18,9 @@ module.exports = function routes(app){
     io.set('log level', 1);
   });
 
-  io.sockets.on('connection', function (socket) {
-
-
-    function getTweetToClassify(){
-      Tweet.findOne({trained: false}, function(e, tweet){
-
-        var expr = /[^\u0000-\ud83d]/g;
-
-        if(expr.test(JSON.stringify(tweet))){
-          // due to issue with socket.io and some unicode characters
-          // https://github.com/LearnBoost/socket.io/issues/451
-          // This profile is problematic: https://twitter.com/#!/glendalyy_
-          tweet.remove(getTweetToClassify);
-        } else {
-          socket.emit('toClassify', tweet);
-        }
-      });
-    }
-
-    socket.on('requestTweet', function (data) {
-      if(data){
-        Tweet.findOne({ id_str: data.tweet_id }, function(e, tweet){
-          tweet.trained_language = data.language
-          tweet.trained = true;
-          tweet.save(function(e){
-            //send another tweet to classify
-            getTweetToClassify();
-          });
-        });
-      } else {
-        getTweetToClassify();
-      }
-    });
-
-  });
-
-
-    /* Connect to Twitter streaming API and start sending tweets to the client */
+  /* Connect to Twitter streaming API and start sending tweets to the client */
 
   twit.stream('statuses/sample', function(stream) {
-    var processing = false;
-    stream
-      .on('data', function(data){
-        if(!processing){
-          processing = true;
-          try{
-            classifyAndSendTweet(data);
-          } catch(e) {
-            processing = false;
-          }
-        }
-      });
-
     function classifyAndSendTweet(data){
       //classify a tweet based on word probabilities
       var tweet = new Tweet(data)
@@ -110,17 +60,14 @@ module.exports = function routes(app){
 
           io.sockets.emit('newTweet', tweet);
 
-          processing = false;
-
         });
     }
   });
 
 
-
   /* Routes */
 
-  app.get('/api/getTweets', function(req, res){
+  app.get('/api/getLanguage', function(req, res){
     Tweet.find()
       .limit(100)
       .run(function(e, results){
@@ -129,7 +76,10 @@ module.exports = function routes(app){
   });
 
   app.get('/api/getLanguage/:language', function(req, res){
-    Tweet.find({})
+    //find highest probablity tweets over 0.5
+    Tweet
+      .where('probability.' + req.params.language).$gt(0.5)
+      .where('predicted_language', req.params.language)
       .limit(100)
       .sort('probability.' + req.params.language, -1)
       .run(function(e, results){
@@ -167,7 +117,11 @@ module.exports = function routes(app){
 
 
   app.get('/api/languages', function(req, res){
-    res.json(languages);
+    var results = {};
+    languages.forEach(function(language){
+      results[language.code] = { name: language.name };
+    });
+    res.json(results);
   });
  
 
