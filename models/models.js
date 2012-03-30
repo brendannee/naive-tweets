@@ -23,31 +23,38 @@ TweetSchema.methods.getWords = function getWords(cb){
   //Split tweet into words
   text = this.text;
 
-  //remove all username
-  text = text.replace(/@([A-Za-z0-9_]+)/g,"");
+  if(text){
+    //remove all username
+    text = text.replace(/@([A-Za-z0-9_]+)/g,"");
 
-  //remove all hashtags
-  text = text.replace(/#([A-Za-z0-9_]+)/g,"");
+    //remove all hashtags
+    text = text.replace(/#([A-Za-z0-9_]+)/g,"");
 
-  //remove all URLs
-  text = text.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
+    //remove all URLs
+    text = text.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&~\?\/.=]+/g,"");
 
-  //remove all punctuation
-  text = text.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
+    //remove all punctuation
+    text = text.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()?'"\[\]\\+-=<>]/g,"");
 
-  //make all lowercase
-  text = text.toLowerCase();
+    //make all lowercase
+    text = text.toLowerCase();
 
-  //split spaces
-  var words = text.split(/\s+/);
+    //split spaces
+    var words = text.split(/\s+/);
 
-  //filter to unique words
-  words = _.uniq(words);
+    //filter to unique words
+    words = _.uniq(words);
 
-  //remove blanks
-  words = _.without(words, '');
+    //remove blanks
+    words = _.without(words, '');
 
-  return words;
+    return words;
+
+  } else {
+
+    return [];
+
+  }
 }
 
 TweetSchema.methods.classify = function classify(cb){
