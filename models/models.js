@@ -2,37 +2,17 @@ var mongoose = require('mongoose')
   , _ = require('underscore')
   , languages = require('../lib/languages');
 
-
+var language_codes = {};
+languages.forEach(function(language){
+  language_codes[language.code] = { type: Number, index: true };
+});
 
 var TweetSchema = new mongoose.Schema({
-      id_str            :  { type: String, unique: true }
+      id_str            :  { type: String }
+    , from_user         :  { type: String, unique: true }
     , text              :  { type: String }
     , created_at        :  { type: String }
-    , probability       :  {
-        en                :  { type: Number, index: true }
-      , ar                :  { type: Number, index: true }
-      , zh                :  { type: Number, index: true }
-      , de                :  { type: Number, index: true }
-      , el                :  { type: Number, index: true }
-      , et                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fi                :  { type: Number, index: true }
-      , id                :  { type: Number, index: true }
-      , it                :  { type: Number, index: true }
-      , ja                :  { type: Number, index: true }
-      , ko                :  { type: Number, index: true }
-      , mn                :  { type: Number, index: true }
-      , nn                :  { type: Number, index: true }
-      , fa                :  { type: Number, index: true }
-      , ru                :  { type: Number, index: true }
-      , sv                :  { type: Number, index: true }
-      , th                :  { type: Number, index: true }
-      , tr                :  { type: Number, index: true }
-      , vi                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fr                :  { type: Number, index: true }
-      , other             :  { type: Number, index: true }
-    }
+    , probability       :  language_codes
     , predicted_language:  { type: String }
     , trained_language  :  { type: String }
     , trained           :  { type: Boolean, index: true, default: false }
@@ -113,61 +93,8 @@ TweetSchema.methods.classify = function classify(cb){
 
 var Tweet = mongoose.model('Tweet', TweetSchema);
 
-
-
-
-
-
 var Probability = mongoose.model('Probability', new mongoose.Schema({
       word               :  { type: String, unique: true }
-    , probability        :  {
-        en                :  { type: Number, index: true }
-      , ar                :  { type: Number, index: true }
-      , zh                :  { type: Number, index: true }
-      , de                :  { type: Number, index: true }
-      , el                :  { type: Number, index: true }
-      , et                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fi                :  { type: Number, index: true }
-      , id                :  { type: Number, index: true }
-      , it                :  { type: Number, index: true }
-      , ja                :  { type: Number, index: true }
-      , ko                :  { type: Number, index: true }
-      , mn                :  { type: Number, index: true }
-      , nn                :  { type: Number, index: true }
-      , fa                :  { type: Number, index: true }
-      , ru                :  { type: Number, index: true }
-      , sv                :  { type: Number, index: true }
-      , th                :  { type: Number, index: true }
-      , tr                :  { type: Number, index: true }
-      , vi                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fr                :  { type: Number, index: true }
-      , other             :  { type: Number, index: true }
-    }
-    , count              :  {
-        en                :  { type: Number, index: true }
-      , ar                :  { type: Number, index: true }
-      , zh                :  { type: Number, index: true }
-      , de                :  { type: Number, index: true }
-      , el                :  { type: Number, index: true }
-      , et                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fi                :  { type: Number, index: true }
-      , id                :  { type: Number, index: true }
-      , it                :  { type: Number, index: true }
-      , ja                :  { type: Number, index: true }
-      , ko                :  { type: Number, index: true }
-      , mn                :  { type: Number, index: true }
-      , nn                :  { type: Number, index: true }
-      , fa                :  { type: Number, index: true }
-      , ru                :  { type: Number, index: true }
-      , sv                :  { type: Number, index: true }
-      , th                :  { type: Number, index: true }
-      , tr                :  { type: Number, index: true }
-      , vi                :  { type: Number, index: true }
-      , es                :  { type: Number, index: true }
-      , fr                :  { type: Number, index: true }
-      , other             :  { type: Number, index: true }
-    }
+    , probability        :  language_codes
+    , count              :  language_codes
   }, {strict:true}));

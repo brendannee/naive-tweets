@@ -29,7 +29,7 @@ async.series([
   , calculateWordProbabilities
   , classifyTweets
 ], function(e, results){
-  console.log('All Tweets Classified');
+  console.log('\nAll Tweets Classified');
   process.exit();
 });
 
@@ -40,28 +40,53 @@ function getTrainingData(cb){
 
   function trainLanguage(language, cb){
     if(language.loc){
-      twit.search('place:' + language.loc, {rpp:100}, function(err, data) {
-        console.log('Training for ' + language.name + ': ' + data.results.length + ' tweets');
-        async.forEachSeries(data.results, processTweet, function(e, results){
+      var tweetCount
+        , requestCount = 0
+        , id_str = null
+        , noMoreTweets = false;
+      async.until(
+        function(){ return (tweetCount > 300 || noMoreTweets || requestCount >= 10) },
+        getTweets,
+        function(e) {
+          console.log('Downloaded ' + language.name + ': ' + tweetCount + ' tweets');
+          cb();
+        }
+      );
+
+      function getTweets(cb){
+        twit.search('place:' + language.loc, {rpp: 100, max_id: id_str}, function(e, data) {
+          requestCount++;
+          if(data.results && data.results.length > 1){
+            id_str = data.results[data.results.length - 1].id_str;
+            async.forEachSeries(data.results, processTweet, function(e){
+              //find out how many tweets we have in that language
+              Tweet
+                .where('trained', true)
+                .where('trained_language', language.code)
+                .count(function(e, count){
+                  tweetCount = count;
+                  cb();
+                });
+            });
+          } else {
+            noMoreTweets = true;
+            cb();
+          }
+        });
+      }
+
+      function processTweet(data, cb){
+        //classify tweet based on language
+        var tweet = new Tweet(data);
+
+        tweet.trained_language = language.code; 
+        tweet.trained = true;
+        tweet.autotrained = true;
+        tweet.save(function(e, result){
           cb();
         });
-      });
-    }
-  }
-
-
-  function processTweet(data, cb){
-    try{
-      //classify tweet based on language
-      var tweet = new Tweet(data);
-
-      tweet.trained_language = language.code; 
-      tweet.trained = true;
-      tweet.autotrained = true;
-      tweet.save(function(e, result){
-        cb();
-      });
-    } catch(e) {
+      }
+    } else {
       cb();
     }
   }
@@ -74,33 +99,39 @@ function clearProbabilities(cb){
 
 function countWords(cb){
   //Find all trained tweets, break them into words and count them
+  var bar
+    , count;
+  Tweet.where('trained', true).count(function(e, result){
+    count = result;
+    var i = 0;
+    //slice tweets into groups of 1000 to process
+    async.whilst(
+      function() { return i < count; }, 
+      function(cb){
+        Tweet
+          .where('trained', true)
+          .slice([i, 100])
+          .run(function(e, tweets){
+            i = i + 100;
+            console.log(Math.min(i, count) + ' of ' + count + ' tweets processed');
+            async.forEachSeries(tweets, parseTweet, cb);
+          });
 
-  var bar = new ProgressBar('Processing tweets [:bar] :percent :etas', {
-      complete: '='
-    , incomplete: ' '
-    , width: 20
-    , total: 100
+        function parseTweet(tweet, cb){
+          async.forEach(tweet.getWords(), function(word, cb){
+            var updateField = "count." + tweet.trained_language
+              , update = {$inc: {}};
+            update.$inc[updateField] = 1;
+            Probability.update({word: word}, update, {upsert: true}, cb);
+          }, cb);
+        }
+      }, 
+      cb
+    );
   });
 
-  Tweet.find({trained: true}, function(e, tweets){
-    bar.total = tweets.length;
-    async.forEachSeries(tweets, parseTweet, cb);
-  });
 
-  function parseTweet(tweet, cb){
-    async.forEach(tweet.getWords(), function(word, cb){
-      if(word){
-        var updateField = "count." + tweet.trained_language
-          , update = {$inc: {}};
-        update.$inc[updateField] = 1;
-        Probability.update({word: word}, update, {upsert: true}, cb);
-      }
-    }, function(e, results){
-      bar.tick();
-      cb();
-    });
-  }
-}
+ }
 
 function calculateWordProbabilities(cb){
   //Get a list of all words and put into probabilities table
