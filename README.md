@@ -1,12 +1,30 @@
 #Naive Bayes Tweet Classifier in Node.js
 
-Classify tweets using Node.js and a [naive Bayes classifier](http://en.wikipedia.org/wiki/Naive_Bayes_classifier).
+This app classifies tweets by language using Node.js and a [naive Bayes classifier](http://en.wikipedia.org/wiki/Naive_Bayes_classifier).
 
-Tweets are pulled from the [twitter streaming api](https://dev.twitter.com/docs/streaming-api/methods) and queued to be classified.  After classifying a bunch of tweets into Spam, Interesting, Not English, or Not-interesting it will attempt to predict which of these categories a tweet fits into.
+Tweets are pulled from the [twitter streaming api](https://dev.twitter.com/docs/streaming-api/methods) and classified on the fly.
 
-A front-end to train the classifier and review the results is included.
+##Training
+
+Provided is a script to pull tweets from list of specified locations and auto-classify by assumed languaged.  For instance, tweets from Surakarta, Indonesia are all autoclassified as Indonesian.  This provides a large amount of training data which allows the classifier to predict the language of a stream of incoming tweets.
+
+To run the training script
+
+    npm run-script train
+
+This process takes a while, as tweets from specific regions are collected, and limited to one tweet per user (to avoid basing the classification around a small number of users.
+
+##Front-End
+
+A front-end to view a stream of live tweets and their predicted languages is provided.
+
+    node index.js
+
+It provides views of 
 
 ## Configuration
+In order to access the Twitter streaming API you'll need to have an API key. 
+You need to get these keys from the [Twitter Developers Page](https://dev.twitter.com/).
 
 Make a file called options.js that looks like the following:
 
@@ -18,8 +36,6 @@ Make a file called options.js that looks like the following:
       , mongo_node_database: 'tweets'
       , mongo_node_host: 'localhost'
     }
-
-You need to get these keys from the [Twitter Developers Page](https://dev.twitter.com/).
 
 ## License
 
