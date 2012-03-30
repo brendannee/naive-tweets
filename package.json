@@ -1,7 +1,7 @@
 {
   "name": "naive-baysian-twitter",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "author": "Brendan Nee <me@bn.ee>",
   "dependencies": {
       "express": ">= 2.5.8"
@@ -15,6 +15,7 @@
   },
   "engines": {
     "node": "0.6.x",
+    "npm":  "1.0.x"
   },
   "scripts": {
     "train": "node scripts/train.js"
