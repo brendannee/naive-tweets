@@ -75,6 +75,9 @@ $('#pause').click(function(){
 
 
 function showLanguage(language){
+  //menu
+  $('#top-menu li').removeClass('active');
+  $('#languages').addClass('active');
   $('#content .tweets').empty();
   $('#pause').hide();
   $('#explanation').hide();
