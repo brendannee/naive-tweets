@@ -100,6 +100,10 @@ h1{
   float:right;
 }
 
+#explanation{
+  clear:both;
+}
+
 .tweetContainer{
   clear:both;
   height:730px;
@@ -115,6 +119,39 @@ h1{
   position:absolute;
   bottom:0;
 }
+
+
+.meter{
+  position: relative;
+  display:inline-block;
+  margin:2px;
+  cursor:pointer;
+}
+
+.meter, .meter-value, .meter-text {
+  width: 100px;
+  height: 14px;
+}
+
+.meter {
+  background: #bdbdbd;
+}
+
+.meter-value{
+  width:0%;
+  background:#2373b3;
+}
+
+.meter-text {
+  position: absolute;
+  top:0; left:0;
+  color: #fff;
+  text-align: center;
+  width: 100%;
+  font-size:10px;
+  line-height:14px;
+}
+
 
 footer{
   margin-top:50px;

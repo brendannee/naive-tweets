@@ -6,97 +6,129 @@ window.log = function f(){ log.history = log.history || []; log.history.push(arg
 (function(a){function b(){}for(var c="assert,count,debug,dir,dirxml,error,exception,group,groupCollapsed,groupEnd,info,log,markTimeline,profile,profileEnd,time,timeEnd,trace,warn".split(","),d;!!(d=c.pop());){a[d]=a[d]||b;}})
 (function(){try{console.log();return window.console;}catch(a){return (window.console={});}}());
 
+var tweet_id
+  , languages
+  , socket = io.connect()
+  , pause = false
+  , tweetQueue = []
+  , tweets = {};
 
-
-$(document).ready(function(){
-  var tweet_id
-    , languages
-    , socket = io.connect()
-    , pause = false
-    , tweetQueue = [];
-
-  //get languages
-  $.getJSON('/api/languages', function(data){ 
+//get languages
+$.getJSON('/api/languages', function(data){
+  $(document).ready(function(){
     languages = data; 
     for(var language in languages){
       //build dropdown menu
-      $('#languages .dropdown-menu').append('<li><a href="#" data-menu="' + language + '">' + languages[language]['name'] + '</a></li>');
+      $('#languages .dropdown-menu').append('<li><a href="#" data-language="' + language + '">' + languages[language]['name'] + '</a></li>');
+      //build progress bars
+      $('#explanation .meters').append('<div class="meter" id="' + language + '-meter" data-language="' + language + '"><div class="meter-value"><div class="meter-text">' + languages[language]['name'] + '</div></div></div>');
     }
     $('.dropdown-toggle').dropdown();
   });
+});
 
-  socket.on('newTweet', scrollTweets);
+
+//handle tweets sent via socket.io
+socket.on('newTweet', scrollTweets);
 
 
-  $('#classification button').click(function(){
-    $('#loading').show();
-    $(this)
-      .addClass('btn-success')
-      .siblings().addClass('disabled');
-    socket.emit('requestTweet', { tweet_id: tweet_id, language: this.id });
-  });
+//click handlers
+$('#classification button').click(function(){
+  $('#loading').show();
+  $(this)
+    .addClass('btn-success')
+    .siblings().addClass('disabled');
+  socket.emit('requestTweet', { tweet_id: tweet_id, language: this.id });
+});
 
-  $('#top-menu li a').click(function(){
-    var menuItem = $(this).attr('data-menu');
+$('#top-menu li a').click(function(){
+  $(this).parent().addClass('active')
+    .siblings().removeClass('active');
 
-    $(this).parent().addClass('active')
-      .siblings().removeClass('active');
+  if($(this).attr('data-menu') == 'stream') {
+    $('#content .tweets').empty();
+    $('#content').addClass('stream');
+    $('#pause').show();
+    $('#explanation').show();
+    $('#content h1').html('Live Tweets');
+    pause = false;
+  }
+  return false;
+});
 
-    if(menuItem == 'stream') {
-      $('#content .tweets').empty();
-      $('#content').show().addClass('stream');
-      $('#classify').hide();
-      $('#content h1').html('Live Tweets');
-      pause = false;
-    }
+$('#top-menu').on('click', 'li li a', function(){
+  var language = $(this).attr('data-language');
+  showLanguage(language);
+  return false;
+});
 
-    return false;
-  });
- 
-  $('#top-menu').on('click', 'li li a', function(){
-    var menuItem = $(this).attr('data-menu');
+$('#explanation .meters').on('click', '.meter', function(){
+  var language = $(this).attr('data-language');
+  showLanguage(language);
+});
 
-    $('#content .tweets').empty()
-    $('#content').show().removeClass('stream');
-    $('#classify').hide();
-    $('#content h1').html(languages[menuItem]['name'] + ' Tweets');
-    $.getJSON('/api/getLanguage/' + menuItem, renderTweets);
-    pause = true;
+$('#pause').click(function(){
+  pause = (pause) ? false : true;
+  $('span', this).html( (pause) ? 'Play' : 'Pause');
+  $('i', this).removeClass().addClass( (pause) ? 'icon-play' : 'icon-pause' );
+});
 
-    return false;
-  });
 
-  $('#pause').click(function(){
-    pause = (pause) ? false : true;
-    $('span', this).html( (pause) ? 'Play' : 'Pause');
-    $('i', this).removeClass().addClass( (pause) ? 'icon-play' : 'icon-pause' );
-  });
+function showLanguage(language){
+  $('#content .tweets').empty();
+  $('#pause').hide();
+  $('#explanation').hide();
+  $('#content').removeClass('stream');
+  $('#content h1').html(languages[language]['name'] + ' Tweets');
 
-  function scrollTweets(tweet){
-    if(!pause){
-      var tweetDivs = $('.tweetContainer .tweet');
+  //sort by probability
+  if(tweets.length){
+    tweets[language].sort(function(a, b){ return b.probability[language] - a.probability[language]; });
+  }
+  renderTweets(tweets[language]);
+  pause = true;
+}
 
-      tweetQueue.push(tweet);
-      if(tweetQueue.length >= 10 || tweetDivs.length <= 20){
-        renderTweets(tweetQueue);
-        tweetQueue = [];
+function scrollTweets(tweet){
+  if(!$.isArray( tweets[tweet.predicted_language] )){
+    tweets[tweet.predicted_language] = [];
+  }
 
-        //remove elements from the dom every 10 tweets
-        if(tweetDivs.length > 60){
-          var tweetsToRemove = $('.tweetContainer .tweet:lt(' + (tweetDivs.length - 20) +')');
+  //store tweet if not other and we don't already have 100 and update progress meter
+  if(tweet.predicted_language != 'other' && tweets[tweet.predicted_language].length <= 100){
+    tweets[tweet.predicted_language].push(tweet);
+    var meter = $('#explanation .meters #' + tweet.predicted_language + '-meter .meter-value');
 
-          tweetsToRemove.slideUp(function(){
-            tweetsToRemove.remove();
-          });
-        }
+    $(meter).width($(meter).width()+1)
+  }
+
+  if(!pause){
+    var tweetDivs = $('.tweetContainer .tweet');
+
+    tweetQueue.push(tweet);
+    if(tweetQueue.length >= 10 || tweetDivs.length <= 20){
+      renderTweets(tweetQueue);
+      tweetQueue = [];
+
+      //remove elements from the dom every 10 tweets
+      if(tweetDivs.length > 60){
+        var tweetsToRemove = $('.tweetContainer .tweet:lt(' + (tweetDivs.length - 20) +')');
+
+        tweetsToRemove.slideUp(function(){
+          tweetsToRemove.remove();
+        });
       }
     }
   }
+}
 
-  function renderTweets(tweets){
-    $('#loading').hide();
+function renderTweets(tweets){
+  $('#loading').show();
 
-    var content = $('<div>');
+  var content = $('<div>');
+  if(!tweets || !tweets.length){
+    $(content).append('No tweets available');
+  } else {
     tweets.forEach(function(tweet){
       try{
         //update format to match standard stream
@@ -132,14 +164,12 @@ $(document).ready(function(){
         content.append(ich.showTweet(tweet));
 
       } catch(e){}
-
     });
-    $('#content .tweets').append(content.html());
-    $('.timeago').timeago();
-
-    $('#loading').hide();
   }
-});
+  $('#content .tweets').append(content.html());
+  $('.timeago').timeago();
+  $('#loading').hide();
+}
 
 
 function parseTweetURL(text){
