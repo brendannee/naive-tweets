@@ -77,13 +77,13 @@ $(document).ready(function(){
       var tweetDivs = $('.tweetContainer .tweet');
 
       tweetQueue.push(tweet);
-      if(tweetQueue.length >= 10 || tweetDivs.length <= 50){
+      if(tweetQueue.length >= 10 || tweetDivs.length <= 20){
         renderTweets(tweetQueue);
         tweetQueue = [];
 
         //remove elements from the dom every 10 tweets
         if(tweetDivs.length > 60){
-          var tweetsToRemove = $('.tweetContainer .tweet:lt(' + (tweetDivs.length - 50) +')');
+          var tweetsToRemove = $('.tweetContainer .tweet:lt(' + (tweetDivs.length - 20) +')');
 
           tweetsToRemove.slideUp(function(){
             tweetsToRemove.remove();
@@ -114,15 +114,25 @@ $(document).ready(function(){
             name: languages[tweet.predicted_language]['name']
           , code: tweet.predicted_language
         }
+
+        //only show the top 4 probabilities over 0.3
         tweet.probabilities = [];
         for(var language in tweet.probability){
-          if(tweet.probability[language] > 0.3){
+          if(tweet.probability[language] > 0.3 && tweet.probabilities.length <= 4){
             tweet.probabilities.push( { language:language, probability: Math.min(0.99, Math.round(tweet.probability[language]*100)/100 ), name: languages[language]['name'] } );
           }
         }
+
+        //if nothing, then mark it unknown
+        if(!tweet.probabilities.length){
+          tweet.probabilities.push( {language:other, probability:0.99 } );
+        }
+
         tweet.probabilities.sort(function(a, b){ return b.probability - a.probability; });
         content.append(ich.showTweet(tweet));
+
       } catch(e){}
+
     });
     $('#content .tweets').append(content.html());
     $('.timeago').timeago();

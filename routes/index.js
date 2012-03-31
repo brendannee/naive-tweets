@@ -21,48 +21,50 @@ module.exports = function routes(app){
   /* Connect to Twitter streaming API and start sending tweets to the client */
 
   twit.stream('statuses/sample', function(stream) {
-    function classifyAndSendTweet(data){
-      //classify a tweet based on word probabilities
-      var tweet = new Tweet(data)
-        , probability = {}
-        , query = []
-        , predicted_language
-        , max_prob = 0;
-
-      //build 'or' query
-      tweet.getWords().forEach(function(word){
-        query.push({ word: word });
-      });
-
-      Probability
-        .find()
-        .or(query)
-        .run(function(e, results){
-          var update = {};
-          languages.forEach(function(language){
-            var product = _.reduce(results, function(memo, word){ return memo * word.probability[language.code] || memo; }, 1);
-            var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language.code]) || memo; }, 1);
-
-            //minimum probability of 0.01
-            var result = product / ( product + subtract ) || 0.01;
-
-            probability[language.code] = Math.round(result*100000)/100000;
-
-            if(result > max_prob) { 
-              max_prob = result;
-              predicted_language = language.code;
-            }
-          });
-
-          tweet.predicted_language = (max_prob > 0.5) ? predicted_language : 'other';
-
-          tweet.probability = probability;
-
-          io.sockets.emit('newTweet', tweet);
-
-        });
-    }
+    stream.on('data', classifyAndSendTweet);
   });
+
+  function classifyAndSendTweet(data){
+    //classify a tweet based on word probabilities
+    var tweet = new Tweet(data)
+      , probability = {}
+      , query = []
+      , predicted_language
+      , max_prob = 0;
+
+    //build 'or' query
+    tweet.getWords().forEach(function(word){
+      query.push({ word: word });
+    });
+
+    Probability
+      .find()
+      .or(query)
+      .run(function(e, results){
+        var update = {};
+        languages.forEach(function(language){
+          var product = _.reduce(results, function(memo, word){ return memo * word.probability[language.code] || memo; }, 1);
+          var subtract = _.reduce(results, function(memo, word){ return memo * (1 - word.probability[language.code]) || memo; }, 1);
+
+          //minimum probability of 0.01
+          var result = product / ( product + subtract ) || 0.01;
+
+          probability[language.code] = Math.round(result*100000)/100000;
+
+          if(result > max_prob) { 
+            max_prob = result;
+            predicted_language = language.code;
+          }
+        });
+
+        tweet.predicted_language = (max_prob > 0.5) ? predicted_language : 'other';
+
+        tweet.probability = probability;
+
+        io.sockets.emit('newTweet', tweet);
+
+      });
+  }
 
 
   /* Routes */
