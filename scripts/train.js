@@ -39,55 +39,51 @@ function getTrainingData(cb){
   async.forEachSeries(languages, trainLanguage, cb);
 
   function trainLanguage(language, cb){
-    if(language.loc){
-      var tweetCount
-        , requestCount = 0
-        , id_str = null
-        , noMoreTweets = false;
-      async.until(
-        function(){ return (tweetCount > 300 || noMoreTweets || requestCount >= 10) },
-        getTweets,
-        function(e) {
-          console.log('Downloaded ' + language.name + ': ' + tweetCount + ' tweets');
+    var tweetCount
+      , requestCount = 0
+      , id_str = null
+      , noMoreTweets = false;
+    async.until(
+      function(){ return (tweetCount > 300 || noMoreTweets || requestCount >= 10) },
+      getTweets,
+      function(e) {
+        console.log('Downloaded ' + language.name + ': ' + tweetCount + ' tweets');
+        cb();
+      }
+    );
+
+    function getTweets(cb){
+      twit.search('', {rpp: 100, max_id: id_str, geocode: language.coords[1] + ',' + language.coords[0] + ',50mi'}, function(e, data) {
+        requestCount++;
+        if(data.results && data.results.length > 1){
+          id_str = data.results[data.results.length - 1].id_str;
+          async.forEachSeries(data.results, processTweet, function(e){
+            //find out how many tweets we have in that language
+            Tweet
+              .where('trained', true)
+              .where('trained_language', language.code)
+              .count(function(e, count){
+                tweetCount = count;
+                cb();
+              });
+          });
+        } else {
+          noMoreTweets = true;
           cb();
         }
-      );
+      });
+    }
 
-      function getTweets(cb){
-        twit.search('place:' + language.loc, {rpp: 100, max_id: id_str}, function(e, data) {
-          requestCount++;
-          if(data.results && data.results.length > 1){
-            id_str = data.results[data.results.length - 1].id_str;
-            async.forEachSeries(data.results, processTweet, function(e){
-              //find out how many tweets we have in that language
-              Tweet
-                .where('trained', true)
-                .where('trained_language', language.code)
-                .count(function(e, count){
-                  tweetCount = count;
-                  cb();
-                });
-            });
-          } else {
-            noMoreTweets = true;
-            cb();
-          }
-        });
-      }
+    function processTweet(data, cb){
+      //classify tweet based on language
+      var tweet = new Tweet(data);
 
-      function processTweet(data, cb){
-        //classify tweet based on language
-        var tweet = new Tweet(data);
-
-        tweet.trained_language = language.code; 
-        tweet.trained = true;
-        tweet.autotrained = true;
-        tweet.save(function(e, result){
-          cb();
-        });
-      }
-    } else {
-      cb();
+      tweet.trained_language = language.code; 
+      tweet.trained = true;
+      tweet.autotrained = true;
+      tweet.save(function(e, result){
+        cb();
+      });
     }
   }
 }
@@ -118,12 +114,19 @@ function countWords(cb){
           });
 
         function parseTweet(tweet, cb){
-          async.forEach(tweet.getWords(), function(word, cb){
-            var updateField = "count." + tweet.trained_language
-              , update = {$inc: {}};
-            update.$inc[updateField] = 1;
-            Probability.update({word: word}, update, {upsert: true}, cb);
-          }, cb);
+          var words = tweet.getWords();
+
+          //don't process short tweets with fewer than 4 words
+          if(words.length > 3){
+            async.forEach(tweet.getWords(), function(word, cb){
+              var updateField = "count." + tweet.trained_language
+                , update = {$inc: {}};
+              update.$inc[updateField] = 1;
+              Probability.update({word: word}, update, {upsert: true}, cb);
+            }, cb);
+          } else {
+            cb();
+          }
         }
       }, 
       cb
