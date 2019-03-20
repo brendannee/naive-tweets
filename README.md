@@ -1,14 +1,14 @@
-#Naive Bayes Tweet Classifier in Node.js
+# Naive Bayes Tweet Classifier in Node.js
 
 Naive Tweets is an app that classifies tweets by language using a [naive Bayes classifier](http://en.wikipedia.org/wiki/Naive_Bayes_classifier).  It is written in Node.js.
 
 Tweets are pulled from the [twitter streaming api](https://dev.twitter.com/docs/streaming-api/methods) and classified on the fly.
 
-##Example
+## Example
 
 A live example is hosted at [http://naive-tweets.bn.ee/](http://naive-tweets.bn.ee/).
 
-##Training
+## Training
 
 Provided is a script to pull tweets from list of specified locations and auto-classify by assumed languaged.  For instance, tweets from Surakarta, Indonesia are all autoclassified as Indonesian.  This provides a large amount of training data which allows the classifier to predict the language of a stream of incoming tweets.
 
@@ -20,7 +20,7 @@ Locations and languages are specified in `lib/languages.js`.
 
 This process takes a while, as tweets from specific regions are collected, and limited to one tweet per user (to avoid basing the classification around a small number of users.
 
-##Front-End
+## Front-End
 
 A front-end to view a stream of live tweets and their predicted languages is provided.
 
